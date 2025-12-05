@@ -1,0 +1,72 @@
+# Root .gitignore for Memora_Project
+
+# Node dependencies
+node_modules/
+
+# Backend build/output (typical Express apps)
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/npm-debug.log*
+backend/yarn-debug.log*
+backend/yarn-error.log*
+
+# Frontend (Vue) build outputs and local env
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Logs
+*.log
+logs/
+backend/logs/
+frontend/logs/
+
+# OS files
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# IDE/editor settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Dependency directories for many languages
+/.pnp/
+.pnp.js
+
+# npm package lock files (keep them if you want deterministic installs)
+# package-lock.json
+# yarn.lock
+
+# Coverage and build artifacts
+coverage/
+*.lcov
+
+# Ignore local OS-specific or personal files
+.env
+.env.*.local
+
+# Optional: SQL dumps - usually you want to keep schema but avoid large DB dumps
+# If your SQL files are backups or contain credentials, uncomment the following line to ignore them
+# sql/*.sql
+
+# Keep the repository metadata and config files tracked (README, package.json, etc.)
