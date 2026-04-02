@@ -7,11 +7,9 @@ var cors = require('cors');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-
-var utentiRouter = require('./routes/utenti');
 var subjectRouter = require('./routes/subject');
 var lessonsRouter = require('./routes/lessons');
-var flashcardRouter = require('./routes/flashcard');
+var flashcardRouter = require('./routes/flashcards');
 var sessioniRouter = require('./routes/sessioni');
 var badgeRouter = require('./routes/badge');
 var pointsRouter = require('./routes/points');
@@ -30,7 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-app.use('/api/utenti', utentiRouter);
+app.use('/api/users', usersRouter);
 app.use('/api/subject', subjectRouter);
 app.use('/api/lessons', lessonsRouter);
 app.use('/api/flashcard', flashcardRouter);

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/flashcardController');
+const controller = require('../controllers/flashcardsControllers');
 
 router.get('/', controller.getAll);
 router.post('/', controller.create);

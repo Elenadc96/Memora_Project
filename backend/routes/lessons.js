@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/lessonsController');
+const controller = require('../controllers/lessonsControllers');
 
 router.get('/', controller.getAll);
 router.get('/subject/:subjectId', controller.getBySubject);
