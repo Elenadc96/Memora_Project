@@ -7,8 +7,11 @@ const connection = mysql.createConnection({
   database: 'memora_project'
 });
 
-connection.connect(err => {
-  if (err) throw err;
+connection.connect((err) => {
+  if (err) {
+    console.error('Errore connessione MySQL:', err.message);
+    return;
+  }
   console.log('Connected to MySQL');
 });
 
