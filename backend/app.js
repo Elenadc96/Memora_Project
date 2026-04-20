@@ -1,23 +1,14 @@
-var createError = require('http-errors');
 var express = require('express');
+var cors = require('cors');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var cors = require('cors');
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var subjectRouter = require('./routes/subject');
-var lessonsRouter = require('./routes/lessons');
-var flashcardRouter = require('./routes/flashcards');
-var sessioniRouter = require('./routes/sessioni');
-var badgeRouter = require('./routes/badge');
-var pointsRouter = require('./routes/points');
 
 var app = express();
 
 require('./config/db');
 
+// Middleware
 app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
@@ -25,31 +16,26 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-
-app.use('/api/users', usersRouter);
-app.use('/api/subject', subjectRouter);
-app.use('/api/lessons', lessonsRouter);
-app.use('/api/flashcard', flashcardRouter);
-app.use('/api/sessioni', sessioniRouter);
-app.use('/api/badge', badgeRouter);
-app.use('/api/points', pointsRouter);
-
-app.use(function(req, res, next) {
-  next(createError(404));
+// Route base
+app.get('/', (req, res) => {
+  res.json({ message: 'API Memora Project attiva!' });
 });
 
-app.use(function(err, req, res, next) {
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-  res.status(err.status || 500);
-  res.render('error');
+// Tutte le tue API
+app.use('/api/utenti', require('./routes/users'));
+app.use('/api/subject', require('./routes/subject'));
+app.use('/api/lessons', require('./routes/lessons'));
+app.use('/api/flashcard', require('./routes/flashcards'));
+app.use('/api/sessioni', require('./routes/sessioni'));
+app.use('/api/badge', require('./routes/badge'));
+app.use('/api/points', require('./routes/points'));
+
+// 404 handler JSON
+app.use('*', (req, res) => {
+  res.status(404).json({ message: 'Route non trovata' });
 });
 
-module.exports = app;
-
-var port = process.env.PORT || 3000;
-app.listen(port, function() {
-  console.log('Server avviato su porta ' + port);
+const port = 3000;
+app.listen(port, () => {
+  console.log('Server su http://localhost:' + port);
 });
