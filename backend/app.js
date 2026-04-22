@@ -3,14 +3,17 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var cors = require('cors');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var apiRouter = require('./routes/api');
 
 var app = express();
 
-// IMPORTA LA CONNESSIONE AL DATABASE
-require('./config/db');   // <--- AGGIUNGI QUESTA RIGA
+require('./config/db');
+
+app.use(cors({ origin: 'http://localhost:8080' }));
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -24,6 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/api', apiRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
