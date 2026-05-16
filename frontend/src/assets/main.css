@@ -1,3 +1,72 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ─── Design tokens ───────────────────────────────────────────────────────── */
+/* Cambia qui per aggiornare i colori in tutta l'app.                          */
+
+:root {
+  /* Palette principale */
+  --color-primary:      #1B4965;   /* titoli, testo scuro */
+  --color-accent:       #5FA8D3;   /* bottoni, link attivi */
+  --color-accent-hover: #62B6CB;   /* hover bottoni */
+  --color-border:       #62B6CB;   /* bordi, separatori */
+
+  /* Superfici (light mode) */
+  --color-page:    #BEE9E8;   /* sfondo pagina */
+  --color-surface: #CAE9FF;   /* card, pannelli, sidebar */
+  --color-on-surface: #1B4965; /* testo su surface */
+
+  /* Testo */
+  --color-text-primary:  #1B4965;
+  --color-text-muted:    #1B496599; /* primary al 60% */
+
+  /* Dark mode */
+  --color-page-dark:    #0d1f2d;
+  --color-surface-dark: #1B4965;
+  --color-text-dark:    #CAE9FF;
+  --color-text-muted-dark: #BEE9E8;
+}
+
+.dark {
+  --color-page:        #0d1f2d;
+  --color-surface:     #1B4965;
+  --color-on-surface:  #CAE9FF;
+  --color-text-primary: #CAE9FF;
+  --color-text-muted:   #BEE9E8;
+}
+
+/* ─── Componenti riutilizzabili ───────────────────────────────────────────── */
+/* Classi usabili direttamente nei template: class="btn-primary", ecc.         */
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent hover:bg-accent-hover text-white font-medium py-2 px-4 rounded-md transition-colors;
+  }
+
+  .btn-outline {
+    @apply border border-accent text-accent hover:bg-accent hover:text-white font-medium py-2 px-4 rounded-md transition-colors;
+  }
+
+  .btn-ghost {
+    @apply text-primary hover:bg-surface font-medium py-2 px-4 rounded-md transition-colors;
+  }
+
+  .input-field {
+    @apply w-full border border-border rounded-md px-3 py-2 text-primary bg-white
+           focus:outline-none focus:ring-2 focus:ring-accent
+           dark:bg-page dark:text-on-surface dark:border-border;
+  }
+
+  .card {
+    @apply bg-white dark:bg-surface rounded-xl shadow-sm border border-border/30 p-4;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-primary dark:text-on-surface;
+  }
+
+  .page-subtitle {
+    @apply text-text-muted dark:text-on-surface/70 mt-1;
+  }
+}
