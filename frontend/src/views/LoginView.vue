@@ -21,8 +21,8 @@
               <input v-model="form.name" type="text" required class="input-field" />
             </div>
             <div class="space-y-1">
-              <label class="block text-sm text-primary">{{ $t('login.surname') }}</label>
-              <input v-model="form.surname" type="text" required class="input-field" />
+              <label class="block text-sm text-primary">{{ $t('login.lastName') }}</label>
+              <input v-model="form.lastName" type="text" required class="input-field" />
             </div>
           </template>
 
@@ -67,7 +67,7 @@ export default {
   data() {
     return {
       isLogin: true,
-      form: { name: '', surname: '', email: '', password: '', confirmPassword: '' },
+      form: { name: '', lastName: '', email: '', password: '', confirmPassword: '' },
     }
   },
   methods: {

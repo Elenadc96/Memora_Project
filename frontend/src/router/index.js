@@ -12,13 +12,39 @@ import LoginView from '../views/LoginView.vue'
 // le dimensioni del bundle iniziale.
 const routes = [
   { path: '/', redirect: '/login' },
-  { path: '/login',     name: 'Login',     component: LoginView },
-  { path: '/dashboard', name: 'Dashboard', component: () => import('../views/DashboardView.vue') },
-  { path: '/ranking',   name: 'Ranking',   component: () => import('../views/RankingView.vue') },
-  { path: '/settings',  name: 'Settings',  component: () => import('../views/SettingsView.vue') },
-  // :id è un parametro dinamico — es. /subject/matematica
-  // accessibile nel componente con this.$route.params.id
-  { path: '/subject/:id', name: 'Subject', component: () => import('../views/SubjectView.vue') },
+  { path: '/login', name: 'Login', component: LoginView },
+
+  // Tutte le rotte autenticate sono figlie di AuthLayout.
+  // AuthLayout contiene la Sidebar + un <router-view> dove viene
+  // iniettato il componente figlio corrispondente all'URL corrente.
+  {
+    path: '/',
+    component: () => import('../layouts/AuthLayout.vue'),
+    children: [
+      {
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('../views/DashboardView.vue'),
+      },
+      {
+        path: 'ranking',
+        name: 'Ranking',
+        component: () => import('../views/RankingView.vue'),
+      },
+      {
+        path: 'settings',
+        name: 'Settings',
+        component: () => import('../views/SettingsView.vue'),
+      },
+      // :id è un parametro dinamico — es. /subject/matematica
+      // accessibile nel componente con this.$route.params.id
+      {
+        path: 'subject/:id',
+        name: 'Subject',
+        component: () => import('../views/SubjectView.vue'),
+      },
+    ],
+  },
 ]
 
 // createWebHistory usa l'History API del browser (URL puliti, senza #).

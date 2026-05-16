@@ -15,6 +15,7 @@
     "i18next": "^26.2.0",
     "i18next-browser-languagedetector": "^8.2.1",
     "i18next-vue": "^5.4.0",
+    "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
     "postcss": "^8.5.14",

@@ -12,26 +12,32 @@
   --color-accent-hover: #62B6CB;   /* hover bottoni */
   --color-border:       #62B6CB;   /* bordi, separatori */
 
+  /* Canali RGB separati: necessari per usare rgba() con opacità variabile.
+     Tailwind v3 non può calcolare l'opacità da una CSS variable hex. */
+  --color-accent-rgb:  95, 168, 211;   /* = #5FA8D3 */
+  --color-primary-rgb: 27, 73, 101;    /* = #1B4965 */
+
   /* Superfici (light mode) */
-  --color-page:    #BEE9E8;   /* sfondo pagina */
-  --color-surface: #CAE9FF;   /* card, pannelli, sidebar */
-  --color-on-surface: #1B4965; /* testo su surface */
+  --color-page:       #BEE9E8;   /* sfondo pagina */
+  --color-surface:    #CAE9FF;   /* card, pannelli, sidebar */
+  --color-on-surface: #1B4965;   /* testo su surface */
 
   /* Testo */
-  --color-text-primary:  #1B4965;
-  --color-text-muted:    #1B496599; /* primary al 60% */
+  --color-text-primary: #1B4965;
+  --color-text-muted:   #1B496599;   /* primary al 60% di opacità */
 
-  /* Dark mode */
-  --color-page-dark:    #0d1f2d;
-  --color-surface-dark: #1B4965;
-  --color-text-dark:    #CAE9FF;
-  --color-text-muted-dark: #BEE9E8;
+  /* Opacità pre-calcolate per usi frequenti */
+  --color-accent-10: rgba(95, 168, 211, 0.1);
+  --color-accent-20: rgba(95, 168, 211, 0.2);
+  --color-accent-30: rgba(95, 168, 211, 0.3);
+  --color-white-10:  rgba(255, 255, 255, 0.1);
+  --color-white-20:  rgba(255, 255, 255, 0.2);
 }
 
 .dark {
-  --color-page:        #0d1f2d;
-  --color-surface:     #1B4965;
-  --color-on-surface:  #CAE9FF;
+  --color-page:         #0d1f2d;
+  --color-surface:      #1B4965;
+  --color-on-surface:   #CAE9FF;
   --color-text-primary: #CAE9FF;
   --color-text-muted:   #BEE9E8;
 }
@@ -59,7 +65,8 @@
   }
 
   .card {
-    @apply bg-white dark:bg-surface rounded-xl shadow-sm border border-border/30 p-4;
+    @apply bg-white dark:bg-surface rounded-xl shadow-sm p-4;
+    border: 1px solid var(--color-accent-30);
   }
 
   .page-title {
@@ -67,6 +74,36 @@
   }
 
   .page-subtitle {
-    @apply text-text-muted dark:text-on-surface/70 mt-1;
+    @apply mt-1;
+    color: var(--color-text-muted);
+  }
+
+  /* Voce di navigazione nella sidebar.
+     Se in futuro si usa PrimeVue, si può sostituire questa classe
+     con le props di PrimeVue Button (text, severity, ecc.) */
+  .sidebar-item {
+    @apply w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm
+           text-primary dark:text-on-surface
+           transition-colors cursor-pointer;
+  }
+
+  /* hover e dark gestiti con CSS nativo perché @apply non supporta
+     combinazioni di opacità con CSS variables */
+  .sidebar-item:hover {
+    background-color: var(--color-accent-10);
+  }
+
+  .dark .sidebar-item:hover {
+    background-color: var(--color-white-10);
+  }
+
+  /* Stato attivo: rotta corrente o materia selezionata */
+  .sidebar-item--active {
+    @apply font-medium;
+    background-color: var(--color-accent-20);
+  }
+
+  .dark .sidebar-item--active {
+    background-color: var(--color-white-20);
   }
 }

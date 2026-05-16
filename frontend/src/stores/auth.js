@@ -8,7 +8,7 @@ import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null,    // oggetto utente: { id, name, surname, email }
+    user: null,    // oggetto utente: { id, name, lastName, email } — specchio di utenti nel DB
     token: null,   // token JWT ricevuto dal backend al momento del login
   }),
 
@@ -18,7 +18,7 @@ export const useAuthStore = defineStore('auth', {
 
     // Comodo per mostrare "Ciao, Elena Di Cicco" in sidebar o header
     fullName: (state) => state.user
-      ? `${state.user.name} ${state.user.surname}`
+      ? `${state.user.name} ${state.user.lastName}`
       : '',
   },
 
@@ -32,8 +32,8 @@ export const useAuthStore = defineStore('auth', {
       axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
     },
 
-    async register({ name, surname, email, password }) {
-      const { data } = await axios.post('/api/auth/register', { name, surname, email, password })
+    async register({ name, lastName, email, password }) {
+      const { data } = await axios.post('/api/auth/register', { name, lastName, email, password })
       this.user  = data.user
       this.token = data.token
       axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
