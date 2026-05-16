@@ -1,0 +1,121 @@
+{
+  "login": {
+    "title": "MEMORA",
+    "name": "First Name",
+    "surname": "Last Name",
+    "email": "E-mail",
+    "password": "Password",
+    "confirm_password": "Confirm Password",
+    "login_button": "Login",
+    "register_button": "Sign Up",
+    "no_account": "Not registered yet...",
+    "has_account": "Already have an account?"
+  },
+  "sidebar": {
+    "app_name": "FlashCard Studio",
+    "dashboard": "Dashboard",
+    "ranking": "Ranking",
+    "subjects_title": "Subjects",
+    "add_subject": "Add subject",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "General Overview",
+    "subtitle": "Your flashcard study statistics"
+  },
+  "stats": {
+    "total_cards": "Total Flashcards",
+    "studied_today": "Studied Today",
+    "study_time": "Study Time",
+    "success_rate": "Success Rate",
+    "weekly_growth": "+12% from last week",
+    "monthly_growth": "+5% from last month"
+  },
+  "chart": {
+    "title": "Weekly Study Activity",
+    "studied": "Flashcards Studied",
+    "correct": "Correct Answers",
+    "days": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    }
+  },
+  "progress": {
+    "title": "Progress by Subject",
+    "cards_count": "{{count}} cards"
+  },
+  "subject": {
+    "back": "Back",
+    "study_now": "Study Now",
+    "add_flashcard": "Add Flashcard",
+    "flashcards_title": "Flashcards",
+    "no_flashcards": "No flashcards yet. Add one!",
+    "question": "Question",
+    "answer": "Answer",
+    "add_button": "Add",
+    "cancel": "Cancel"
+  },
+  "ranking": {
+    "title": "Ranking & Achievements",
+    "subtitle": "Compete with other students and unlock special badges",
+    "global_title": "Global Leaderboard - Streak",
+    "your_stats": "Your Stats",
+    "position": "Position",
+    "total_points": "Total Points",
+    "current_streak": "Current Streak",
+    "badges_unlocked": "Badges Unlocked",
+    "cards_completed": "Cards Completed",
+    "badges_title": "Badge Collection",
+    "badges_count": "{{unlocked}}/{{total}} unlocked",
+    "progress_label": "Progress",
+    "streak_days": "{{count}} days",
+    "streak_motivation": "Your Streak: {{count}} days 🔥",
+    "streak_hint": "Keep it up! {{remaining}} more days to unlock the \"{{badge}}\" badge",
+    "unlocked_on": "Unlocked {{date}}",
+    "you_label": "You",
+    "points_label": "{{count}} points",
+    "badges": {
+      "beginner_name": "Beginner",
+      "beginner_desc": "Complete 10 flashcards",
+      "dedicated_name": "Dedicated Student",
+      "dedicated_desc": "7-day streak",
+      "quiz_master_name": "Quiz Master",
+      "quiz_master_desc": "Complete 100 flashcards",
+      "speedster_name": "Speedster",
+      "speedster_desc": "Complete 20 cards in under 5 minutes",
+      "perfectionist_name": "Perfectionist",
+      "perfectionist_desc": "Get 100% accuracy in a session",
+      "marathoner_name": "Marathoner",
+      "marathoner_desc": "30-day streak",
+      "legend_name": "Legend",
+      "legend_desc": "Complete 500 flashcards",
+      "nightowl_name": "Night Owl",
+      "nightowl_desc": "Study after midnight"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account and preferences",
+    "language": "Language",
+    "theme": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "notifications": "Notifications",
+    "save": "Save changes",
+    "saved": "Changes saved"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit"
+  }
+}
