@@ -45,6 +45,7 @@ CREATE TABLE subject (
     user_id INT NOT NULL,
     subjectName VARCHAR(150) NOT NULL,
     description TEXT NULL,
+    color VARCHAR(7) NOT NULL DEFAULT '#5FA8D3',   /* colore hex per la UI (es. pallino sidebar) */
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     INDEX idx_subject_user_id (user_id),
@@ -211,10 +212,10 @@ INSERT INTO badge (name, description, icon, type, goal) VALUES
 INSERT INTO utenti (name, lastName, email, password_hash, settings)
 VALUES ('Mario', 'Rossi', 'mario@example.com', 'hashed_password_here', '{"theme":"dark"}');
 
-INSERT INTO subject (user_id, subjectName, description) VALUES
-(1, 'Matematica', 'Studio della matematica di base'),
-(1, 'Fisica', 'Fondamenti di fisica'),
-(1, 'Storia', 'Storia mondiale e italiana');
+INSERT INTO subject (user_id, subjectName, description, color) VALUES
+(1, 'Matematica', 'Studio della matematica di base', '#5FA8D3'),
+(1, 'Fisica',     'Fondamenti di fisica',            '#62B6CB'),
+(1, 'Storia',     'Storia mondiale e italiana',      '#1B4965');
 
 INSERT INTO lessons (name, description, subject_id, last_study, last_lesson_duration) VALUES
 ('Pitagora', 'Teorema di Pitagora', 1, CURRENT_TIMESTAMP, 20),

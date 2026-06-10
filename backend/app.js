@@ -3,10 +3,21 @@ var cors = require('cors');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var cors = require('cors');
+
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
+var apiRouter = require('./routes/api');
 
 var app = express();
 
 require('./config/db');
+
+app.use(cors({ origin: 'http://localhost:8080' }));
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
 
 // Middleware
 app.use(cors());
@@ -16,9 +27,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Route base
-app.get('/', (req, res) => {
-  res.json({ message: 'API Memora Project attiva!' });
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+app.use('/api', apiRouter);
+
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
 });
 
 // Tutte le tue API
