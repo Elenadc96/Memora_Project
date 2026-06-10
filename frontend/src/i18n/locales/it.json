@@ -52,13 +52,33 @@
   "subject": {
     "back": "Indietro",
     "study_now": "Studia ora",
-    "add_flashcard": "Aggiungi Flashcard",
-    "flashcards_title": "Flashcard",
-    "no_flashcards": "Nessuna flashcard ancora. Aggiungine una!",
-    "question": "Domanda",
-    "answer": "Risposta",
-    "add_button": "Aggiungi",
-    "cancel": "Annulla"
+    "add_lesson": "Aggiungi Lezione",
+    "add_flashcard": "Flashcard",
+    "lessons_count": "lezioni",
+    "cards_count": "flashcard",
+    "no_lessons": "Nessuna lezione ancora. Creane una per iniziare!",
+    "no_flashcards": "Nessuna flashcard in questa lezione. Aggiungine una!",
+    "start_lesson": "Inizia lezione",
+    "tap_to_reveal": "Tocca per vedere la risposta",
+    "delete_lesson_title": "Elimina lezione",
+    "delete_lesson_message": "Stai per eliminare questa lezione insieme a tutte le sue flashcard. L'operazione non è reversibile.",
+    "create_lesson": {
+      "title": "Nuova Lezione",
+      "name_label": "Nome lezione",
+      "name_placeholder": "Es. Teorema di Pitagora",
+      "desc_label": "Descrizione (opzionale)",
+      "desc_placeholder": "Di cosa tratta questa lezione?",
+      "submit": "Crea Lezione"
+    },
+    "create_flashcard": {
+      "title": "Nuova Flashcard",
+      "question_label": "Domanda",
+      "question_placeholder": "Scrivi la domanda...",
+      "answer_label": "Risposta",
+      "answer_placeholder": "Scrivi la risposta...",
+      "difficulty_label": "Difficoltà",
+      "submit": "Aggiungi"
+    }
   },
   "ranking": {
     "title": "Ranking e Achievement",
