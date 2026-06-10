@@ -26,10 +26,11 @@
   </Teleport>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { X } from 'lucide-vue-next'
 
-export default {
+export default defineComponent({
   name: 'BaseDialog',
   components: { X },
 
@@ -40,22 +41,22 @@ export default {
 
   emits: ['update:modelValue'],
 
-  mounted() {
+  mounted(): void {
     window.addEventListener('keydown', this.onKeydown)
   },
-  beforeUnmount() {
+  beforeUnmount(): void {
     window.removeEventListener('keydown', this.onKeydown)
   },
 
   methods: {
-    close() {
+    close(): void {
       this.$emit('update:modelValue', false)
     },
-    onKeydown(e) {
+    onKeydown(e: KeyboardEvent): void {
       if (e.key === 'Escape' && this.modelValue) this.close()
     },
   },
-}
+})
 </script>
 
 <style scoped>

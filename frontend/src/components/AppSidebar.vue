@@ -85,11 +85,12 @@
   </aside>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { BookOpen, LayoutDashboard, Trophy, Plus, Settings } from 'lucide-vue-next'
 import { useFlashcardStore } from '@/stores/flashcards'
 
-export default {
+export default defineComponent({
   name: 'AppSidebar',
 
   components: { BookOpen, LayoutDashboard, Trophy, Plus, Settings },
@@ -100,23 +101,18 @@ export default {
   },
 
   methods: {
-    // Controlla se la rotta corrente corrisponde al percorso dato.
-    // Usato per evidenziare la voce attiva nella sidebar.
-    isRoute(path) {
+    isRoute(path: string): boolean {
       return this.$route.path === path
     },
 
-    // Una materia è "attiva" se è selezionata nello store E siamo su /subject/:id
-    isActiveSubject(id) {
+    isActiveSubject(id: number): boolean {
       return this.$route.path === `/subject/${id}`
     },
 
-    // Naviga alla pagina della materia e aggiorna lo store.
-    // Lo store caricherà le flashcard di quella materia via API.
-    selectSubject(id) {
+    selectSubject(id: number): void {
       this.store.selectSubject(id)
       this.$router.push(`/subject/${id}`)
     },
   },
-}
+})
 </script>

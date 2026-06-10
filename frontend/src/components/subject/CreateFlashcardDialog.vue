@@ -63,10 +63,17 @@
   </BaseDialog>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 
-export default {
+interface DifficultyLevel {
+  value: number
+  label: string
+  cls: string
+}
+
+export default defineComponent({
   name: 'CreateFlashcardDialog',
   components: { BaseDialog },
 
@@ -84,26 +91,26 @@ export default {
         { value: 1, label: 'Facile',    cls: 'diff-easy'   },
         { value: 3, label: 'Medio',     cls: 'diff-medium' },
         { value: 5, label: 'Difficile', cls: 'diff-hard'   },
-      ],
+      ] as DifficultyLevel[],
     }
   },
 
   computed: {
     isOpen: {
-      get() { return this.modelValue },
-      set(v) { this.$emit('update:modelValue', v) },
+      get(): boolean { return this.modelValue },
+      set(v: boolean): void { this.$emit('update:modelValue', v) },
     },
   },
 
   methods: {
-    submit() {
+    submit(): void {
       if (!this.form.question || !this.form.answer) return
       this.$emit('created', { lessonId: this.lessonId, ...this.form })
       this.form = { question: '', answer: '', difficult: 1 }
       this.isOpen = false
     },
   },
-}
+})
 </script>
 
 <style scoped>

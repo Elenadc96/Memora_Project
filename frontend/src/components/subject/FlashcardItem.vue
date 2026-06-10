@@ -32,11 +32,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, type PropType } from 'vue'
 import { Trash2 } from 'lucide-vue-next'
+import type { Flashcard } from '@/types'
 
-// Mappa difficult (0-5) → label e classe CSS
-const DIFFICULTY = {
+interface DifficultyInfo {
+  label: string
+  cls: string
+}
+
+const DIFFICULTY: Record<number, DifficultyInfo> = {
   0: { label: 'Facile',    cls: 'diff--easy'   },
   1: { label: 'Facile',    cls: 'diff--easy'   },
   2: { label: 'Medio',     cls: 'diff--medium' },
@@ -45,15 +51,14 @@ const DIFFICULTY = {
   5: { label: 'Difficile', cls: 'diff--hard'   },
 }
 
-export default {
+export default defineComponent({
   name: 'FlashcardItem',
   components: { Trash2 },
 
   props: {
     flashcard: {
-      type: Object,
+      type: Object as PropType<Flashcard>,
       required: true,
-      // { id, question, answer, difficult }
     },
   },
 
@@ -66,14 +71,14 @@ export default {
   },
 
   computed: {
-    difficultyLabel() {
+    difficultyLabel(): string {
       return DIFFICULTY[this.flashcard.difficult]?.label ?? 'Facile'
     },
-    difficultyClass() {
+    difficultyClass(): string {
       return DIFFICULTY[this.flashcard.difficult]?.cls ?? 'diff--easy'
     },
   },
-}
+})
 </script>
 
 <style scoped>

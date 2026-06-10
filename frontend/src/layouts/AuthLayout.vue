@@ -14,19 +14,19 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import AppSidebar from '@/components/AppSidebar.vue'
 import { useFlashcardStore } from '@/stores/flashcards'
 
-export default {
+export default defineComponent({
   name: 'AuthLayout',
   components: { AppSidebar },
 
   setup() {
     const store = useFlashcardStore()
-    // Carica le materie dal backend non appena l'utente entra nell'area autenticata.
     store.fetchSubjects()
     return { store }
   },
-}
+})
 </script>

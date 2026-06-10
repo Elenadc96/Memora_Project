@@ -43,10 +43,11 @@
   </BaseDialog>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import BaseDialog from '@/components/common/BaseDialog.vue'
 
-export default {
+export default defineComponent({
   name: 'CreateLessonDialog',
   components: { BaseDialog },
 
@@ -64,18 +65,18 @@ export default {
 
   computed: {
     isOpen: {
-      get() { return this.modelValue },
-      set(v) { this.$emit('update:modelValue', v) },
+      get(): boolean { return this.modelValue },
+      set(v: boolean): void { this.$emit('update:modelValue', v) },
     },
   },
 
   methods: {
-    submit() {
+    submit(): void {
       if (!this.form.name) return
       this.$emit('created', { ...this.form })
       this.form = { name: '', description: '' }
       this.isOpen = false
     },
   },
-}
+})
 </script>

@@ -1,0 +1,35 @@
+export interface User {
+  id: number
+  name: string
+  lastName: string
+  email: string
+}
+
+export interface Subject {
+  id: number
+  subjectName: string
+  description: string
+  color: string
+  cardCount: number
+  user_id: number
+}
+
+export interface Lesson {
+  id: number
+  name: string
+  description: string
+  subject_id: number
+  status: 0 | 1 | 2
+  last_study: string | null
+  last_lesson_duration: number
+  flashcardCount: number
+}
+
+export interface Flashcard {
+  id: number
+  question: string
+  answer: string
+  difficult: number
+}
+
+export type Language = 'it' | 'en'

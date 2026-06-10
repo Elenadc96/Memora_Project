@@ -88,23 +88,30 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, type PropType } from 'vue'
 import { ChevronRight, BookOpen, Clock, Plus, Trash2, Play } from 'lucide-vue-next'
 import { useFlashcardStore } from '@/stores/flashcards'
+import type { Lesson, Flashcard } from '@/types'
 import FlashcardItem from './FlashcardItem.vue'
 
-const STATUS = {
+interface StatusInfo {
+  label: string
+  cls: string
+}
+
+const STATUS: Record<number, StatusInfo> = {
   0: { label: 'Non iniziata', cls: 'status--idle'    },
   1: { label: 'In corso',     cls: 'status--active'  },
   2: { label: 'Completata',   cls: 'status--done'    },
 }
 
-export default {
+export default defineComponent({
   name: 'LessonCard',
   components: { ChevronRight, BookOpen, Clock, Plus, Trash2, Play, FlashcardItem },
 
   props: {
-    lesson: { type: Object, required: true },
+    lesson: { type: Object as PropType<Lesson>, required: true },
   },
 
   emits: ['delete', 'add-flashcard', 'start-lesson'],
@@ -121,18 +128,17 @@ export default {
   },
 
   computed: {
-    statusLabel() { return STATUS[this.lesson.status]?.label ?? 'Non iniziata' },
-    statusClass()  { return STATUS[this.lesson.status]?.cls  ?? 'status--idle'  },
+    statusLabel(): string { return STATUS[this.lesson.status]?.label ?? 'Non iniziata' },
+    statusClass(): string  { return STATUS[this.lesson.status]?.cls  ?? 'status--idle'  },
 
-    flashcards() {
+    flashcards(): Flashcard[] {
       return this.store.flashcardsForLesson(this.lesson.id)
     },
   },
 
   methods: {
-    async toggle() {
+    async toggle(): Promise<void> {
       this.isExpanded = !this.isExpanded
-      // Carica le flashcard la prima volta che si apre la lezione
       if (this.isExpanded && !this.store.hasFlashcardsLoaded(this.lesson.id)) {
         this.loadingCards = true
         await this.store.fetchFlashcardsForLesson(this.lesson.id)
@@ -140,11 +146,11 @@ export default {
       }
     },
 
-    async onDeleteFlashcard(flashcardId) {
+    async onDeleteFlashcard(flashcardId: number): Promise<void> {
       await this.store.deleteFlashcard({ flashcardId, lessonId: this.lesson.id })
     },
   },
-}
+})
 </script>
 
 <style scoped>

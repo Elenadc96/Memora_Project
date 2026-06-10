@@ -95,15 +95,17 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { ChevronLeft, Plus, BookOpen, Layers } from 'lucide-vue-next'
 import { useFlashcardStore }   from '@/stores/flashcards'
+import type { Subject }        from '@/types'
 import LessonCard              from '@/components/subject/LessonCard.vue'
 import CreateLessonDialog      from '@/components/subject/CreateLessonDialog.vue'
 import CreateFlashcardDialog   from '@/components/subject/CreateFlashcardDialog.vue'
 import ConfirmDialog           from '@/components/common/ConfirmDialog.vue'
 
-export default {
+export default defineComponent({
   name: 'SubjectView',
 
   components: {
@@ -120,40 +122,37 @@ export default {
       showCreateLesson:    false,
       showCreateFlashcard: false,
       showDeleteConfirm:   false,
-      targetLessonId:      null,   // lezione a cui aggiungere la prossima flashcard
-      pendingDeleteId:     null,   // lezione in attesa di conferma eliminazione
+      targetLessonId:      null as number | null,
+      pendingDeleteId:     null as number | null,
     }
   },
 
   computed: {
-    // L'id della materia viene dal parametro URL (:id)
-    subjectId() {
+    subjectId(): number {
       return Number(this.$route.params.id)
     },
 
-    subject() {
+    subject(): Subject | null {
       return this.store.subjects.find((s) => s.id === this.subjectId) ?? null
     },
 
-    totalCards() {
+    totalCards(): number {
       return this.store.lessons.reduce((sum, l) => sum + (l.flashcardCount ?? 0), 0)
     },
   },
 
   watch: {
-    // Ricarica le lezioni se l'utente naviga a una materia diversa
-    subjectId(newId) {
+    subjectId(newId: number): void {
       this.store.selectSubject(newId)
     },
   },
 
-  mounted() {
-    // Seleziona la materia nello store e carica le sue lezioni
+  mounted(): void {
     this.store.selectSubject(this.subjectId)
   },
 
   methods: {
-    async onCreateLesson(payload) {
+    async onCreateLesson(payload: { name: string; description: string }): Promise<void> {
       await this.store.createLesson({
         subjectId:   this.subjectId,
         name:        payload.name,
@@ -161,32 +160,28 @@ export default {
       })
     },
 
-    // Primo click su "elimina lezione" → apre il ConfirmDialog
-    onDeleteLesson(lessonId) {
+    onDeleteLesson(lessonId: number): void {
       this.pendingDeleteId   = lessonId
       this.showDeleteConfirm = true
     },
 
-    // Chiamato solo dopo che l'utente ha confermato nel ConfirmDialog
-    async confirmDeleteLesson() {
+    async confirmDeleteLesson(): Promise<void> {
       if (!this.pendingDeleteId) return
       await this.store.deleteLesson(this.pendingDeleteId)
       this.pendingDeleteId = null
     },
 
-    // Apre il dialog flashcard puntando alla lezione corretta
-    openAddFlashcard(lessonId) {
+    openAddFlashcard(lessonId: number): void {
       this.targetLessonId      = lessonId
       this.showCreateFlashcard = true
     },
 
     // TODO: navigare a /study/:lessonId quando la sessione di studio sarà implementata.
-    //       Vedi il commento in LessonCard.vue per i dettagli del flusso.
-    onStartLesson(lessonId) {
+    onStartLesson(lessonId: number): void {
       console.warn('TODO: avvia sessione di studio per la lezione', lessonId)
     },
 
-    async onCreateFlashcard(payload) {
+    async onCreateFlashcard(payload: { lessonId: number; question: string; answer: string; difficult: number }): Promise<void> {
       await this.store.createFlashcard({
         lessonId:  payload.lessonId,
         question:  payload.question,
@@ -195,5 +190,5 @@ export default {
       })
     },
   },
-}
+})
 </script>

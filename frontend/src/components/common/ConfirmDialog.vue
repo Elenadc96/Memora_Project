@@ -54,11 +54,12 @@
   </BaseDialog>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
 import BaseDialog from './BaseDialog.vue'
 
-export default {
+export default defineComponent({
   name: 'ConfirmDialog',
   components: { AlertTriangle, BaseDialog },
 
@@ -75,22 +76,22 @@ export default {
 
   computed: {
     isOpen: {
-      get() { return this.modelValue },
-      set(v) { this.$emit('update:modelValue', v) },
+      get(): boolean { return this.modelValue },
+      set(v: boolean): void { this.$emit('update:modelValue', v) },
     },
   },
 
   methods: {
-    onConfirm() {
+    onConfirm(): void {
       this.$emit('confirm')
       this.isOpen = false
     },
-    onCancel() {
+    onCancel(): void {
       this.$emit('cancel')
       this.isOpen = false
     },
   },
-}
+})
 </script>
 
 <style scoped>

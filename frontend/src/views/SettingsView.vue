@@ -4,6 +4,7 @@
   </div>
 </template>
 
-<script>
-export default { name: 'SettingsView' }
+<script lang="ts">
+import { defineComponent } from 'vue'
+export default defineComponent({ name: 'SettingsView' })
 </script>

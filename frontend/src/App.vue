@@ -2,13 +2,14 @@
   <router-view />
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue'
 import { useUIStore } from './stores/ui'
 
-export default {
+export default defineComponent({
   name: 'App',
   setup() {
     useUIStore().init()
   },
-}
+})
 </script>
