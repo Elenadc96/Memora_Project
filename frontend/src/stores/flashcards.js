@@ -1,107 +1,181 @@
 // Store Pinia per materie, lezioni e flashcard.
-// È il "magazzino" centrale dei dati di studio: Sidebar, Dashboard
-// e SubjectPage leggono tutti da qui, senza chiamate API duplicate.
+// Struttura dati DB: subject → lessons → flashcard_lesson → flashcard
 //
-// STRUTTURA DB (da tenere a mente):
-//   subject → lessons → flashcard_lesson → flashcard
-//
-// TODO: il frontend attualmente non gestisce il livello "lessons".
-//       Quando verrà implementato, aggiungere:
-//         - state.lessons (array di lezioni della materia aperta)
-//         - fetchLessons(subjectId)
-//         - selectLesson(id) che carica le flashcard di quella lezione
-//       e aggiornare fetchFlashcards per usare l'id della lezione, non della materia.
+// TODO: quando l'autenticazione sarà implementata, passare req.user.id
+//       a tutti gli endpoint per filtrare per utente.
 
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import { mockLessons, mockFlashcards } from '../data/mockSubjectData'
 
 export const useFlashcardStore = defineStore('flashcards', {
   state: () => ({
-    // Popolato da fetchSubjects() all'avvio del layout autenticato.
-    // Struttura di ogni elemento: { id, subjectName, description, color, cardCount }
+    // ── Materie ───────────────────────────────────────────────────────────
     subjects: [],
+    selectedSubjectId: null,
 
-    // Le flashcard hanno content JSON nel DB: { question: "...", answer: "..." }
-    // e un campo `difficult` (INT 0-5).
-    // TODO: quando il livello lessons sarà implementato nel frontend,
-    //       queste saranno le flashcard della lezione selezionata, non della materia.
-    flashcards: [],
+    // ── Lezioni ───────────────────────────────────────────────────────────
+    // Lezioni della materia attualmente aperta.
+    // Ogni lezione ha: id, name, description, status, flashcardCount, ...
+    lessons: [],
 
-    selectedSubjectId: null, // id (INT) della materia selezionata nella sidebar
-    loading: false,          // true mentre una chiamata API è in corso
-    error: null,             // messaggio di errore dell'ultima chiamata fallita
+    // ── Flashcard ─────────────────────────────────────────────────────────
+    // Mappa lessonId → flashcard[].
+    // Cache: evita di ri-fetchare le card di una lezione già caricata.
+    flashcardsByLesson: {},
+
+    loading: false,
+    error:   null,
   }),
 
   getters: {
-    // Restituisce l'oggetto materia completo a partire dall'id selezionato.
-    // ?? null evita undefined se nessuna materia è selezionata.
     selectedSubject: (state) =>
       state.subjects.find((s) => s.id === state.selectedSubjectId) ?? null,
 
-    // Somma il cardCount di tutte le materie (usato nella dashboard generale).
-    // Quando l'API sarà pronta, cardCount sarà calcolato lato backend.
     totalCards: (state) =>
       state.subjects.reduce((sum, s) => sum + (s.cardCount ?? 0), 0),
+
+    // Flashcard di una specifica lezione (già caricate)
+    flashcardsForLesson: (state) => (lessonId) =>
+      state.flashcardsByLesson[lessonId] ?? [],
+
+    // Indica se le flashcard di una lezione sono già in cache
+    hasFlashcardsLoaded: (state) => (lessonId) =>
+      Object.prototype.hasOwnProperty.call(state.flashcardsByLesson, lessonId),
   },
 
   actions: {
+    // ── Materie ─────────────────────────────────────────────────────────
+
     async fetchSubjects() {
       this.loading = true
       this.error   = null
       try {
-        // L'API restituirà: [{ id, subjectName, description, color, cardCount }]
-        // cardCount viene calcolato nel backend con COUNT su lessons + flashcard_lesson
         const { data } = await axios.get('/api/subjects')
         this.subjects = data
       } catch (e) {
         this.error = e.message
       } finally {
-        // finally garantisce che loading torni false anche in caso di errore
         this.loading = false
       }
     },
 
-    // TODO: quando lessons sarà implementato, questo diventerà fetchLessons(subjectId)
-    //       e le flashcard si caricheranno solo dopo che l'utente sceglie una lezione.
-    async fetchFlashcards(subjectId) {
+    selectSubject(id) {
+      this.selectedSubjectId = id
+      if (id) {
+        // Pulisce le lezioni della materia precedente
+        this.lessons = []
+        this.flashcardsByLesson = {}
+        this.fetchLessons(id)
+      }
+    },
+
+    // ── Lezioni ─────────────────────────────────────────────────────────
+
+    async fetchLessons(subjectId) {
       this.loading = true
       this.error   = null
       try {
-        // L'API restituirà: [{ id, content: { question, answer }, difficult }]
-        // Il backend "spacchetta" il campo JSON content prima di rispondere.
-        const { data } = await axios.get(`/api/subjects/${subjectId}/flashcards`)
-        this.flashcards = data
-      } catch (e) {
-        this.error = e.message
+        const { data } = await axios.get(`/api/subjects/${subjectId}/lessons`)
+        this.lessons = data
+      } catch {
+        // Fallback ai mock finché le API non sono collegate
+        this.lessons = mockLessons[subjectId] ?? []
       } finally {
         this.loading = false
       }
     },
 
-    // Seleziona una materia e carica subito le sue flashcard.
-    // Chiamata dalla Sidebar quando l'utente clicca su una materia.
-    selectSubject(id) {
-      this.selectedSubjectId = id
-      if (id) this.fetchFlashcards(id)
+    async createLesson({ subjectId, name, description }) {
+      try {
+        const { data } = await axios.post(`/api/subjects/${subjectId}/lessons`, { name, description })
+        this.lessons.push(data)
+        return data
+      } catch {
+        // Mock: crea un oggetto locale con id temporaneo negativo
+        const newLesson = {
+          id: -(Date.now()),
+          name, description,
+          subject_id: subjectId,
+          status: 0,
+          last_study: null,
+          last_lesson_duration: 0,
+          flashcardCount: 0,
+        }
+        this.lessons.push(newLesson)
+        return newLesson
+      }
     },
 
-    async createFlashcard({ subjectId, question, answer }) {
-      // Il backend si aspetta il campo content come JSON: { question, answer }
-      // Il campo difficult è opzionale, default 0
-      const { data } = await axios.post(`/api/subjects/${subjectId}/flashcards`, {
-        content: { question, answer },
-        difficult: 0,
-      })
-      // Aggiunge la nuova carta direttamente all'array locale invece di
-      // ri-fetchare tutte le flashcard: più veloce e risparmia una chiamata API.
-      this.flashcards.push(data)
+    async deleteLesson(lessonId) {
+      try {
+        await axios.delete(`/api/lessons/${lessonId}`)
+      } catch { /* mock: procede comunque */ }
+      this.lessons = this.lessons.filter((l) => l.id !== lessonId)
+      // Rimuove anche le flashcard dalla cache
+      delete this.flashcardsByLesson[lessonId]
     },
 
-    async deleteFlashcard(flashcardId) {
-      await axios.delete(`/api/flashcards/${flashcardId}`)
-      // filter crea un nuovo array escludendo la carta eliminata.
-      // Vue 3 rileva il cambio di riferimento e aggiorna la UI automaticamente.
-      this.flashcards = this.flashcards.filter((f) => f.id !== flashcardId)
+    // ── Flashcard ────────────────────────────────────────────────────────
+
+    async fetchFlashcardsForLesson(lessonId) {
+      // Se già in cache, non ri-fetcha
+      if (this.hasFlashcardsLoaded(lessonId)) return
+
+      try {
+        const { data } = await axios.get(`/api/lessons/${lessonId}/flashcards`)
+        this.flashcardsByLesson = { ...this.flashcardsByLesson, [lessonId]: data }
+      } catch {
+        // Fallback ai mock
+        const mock = mockFlashcards[lessonId] ?? []
+        this.flashcardsByLesson = { ...this.flashcardsByLesson, [lessonId]: mock }
+      }
+    },
+
+    async createFlashcard({ lessonId, question, answer, difficult = 0 }) {
+      try {
+        const { data } = await axios.post(`/api/lessons/${lessonId}/flashcards`, {
+          question, answer, difficult,
+        })
+        this._appendFlashcard(lessonId, data)
+        this._incrementLessonCount(lessonId)
+        return data
+      } catch {
+        const newCard = { id: -(Date.now()), question, answer, difficult }
+        this._appendFlashcard(lessonId, newCard)
+        this._incrementLessonCount(lessonId)
+        return newCard
+      }
+    },
+
+    async deleteFlashcard({ flashcardId, lessonId }) {
+      try {
+        await axios.delete(`/api/flashcards/${flashcardId}`)
+      } catch { /* mock: procede comunque */ }
+      if (this.flashcardsByLesson[lessonId]) {
+        this.flashcardsByLesson = {
+          ...this.flashcardsByLesson,
+          [lessonId]: this.flashcardsByLesson[lessonId].filter((f) => f.id !== flashcardId),
+        }
+      }
+      this._decrementLessonCount(lessonId)
+    },
+
+    // ── Helpers privati ──────────────────────────────────────────────────
+
+    _appendFlashcard(lessonId, card) {
+      const current = this.flashcardsByLesson[lessonId] ?? []
+      this.flashcardsByLesson = { ...this.flashcardsByLesson, [lessonId]: [...current, card] }
+    },
+
+    _incrementLessonCount(lessonId) {
+      const lesson = this.lessons.find((l) => l.id === lessonId)
+      if (lesson) lesson.flashcardCount = (lesson.flashcardCount ?? 0) + 1
+    },
+
+    _decrementLessonCount(lessonId) {
+      const lesson = this.lessons.find((l) => l.id === lessonId)
+      if (lesson) lesson.flashcardCount = Math.max(0, (lesson.flashcardCount ?? 1) - 1)
     },
   },
 })

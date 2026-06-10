@@ -52,13 +52,33 @@
   "subject": {
     "back": "Back",
     "study_now": "Study Now",
-    "add_flashcard": "Add Flashcard",
-    "flashcards_title": "Flashcards",
-    "no_flashcards": "No flashcards yet. Add one!",
-    "question": "Question",
-    "answer": "Answer",
-    "add_button": "Add",
-    "cancel": "Cancel"
+    "add_lesson": "Add Lesson",
+    "add_flashcard": "Flashcard",
+    "lessons_count": "lessons",
+    "cards_count": "flashcards",
+    "no_lessons": "No lessons yet. Create one to get started!",
+    "no_flashcards": "No flashcards in this lesson yet. Add one!",
+    "start_lesson": "Start lesson",
+    "tap_to_reveal": "Tap to reveal answer",
+    "delete_lesson_title": "Delete lesson",
+    "delete_lesson_message": "You are about to delete this lesson and all its flashcards. This action cannot be undone.",
+    "create_lesson": {
+      "title": "New Lesson",
+      "name_label": "Lesson name",
+      "name_placeholder": "E.g. Pythagoras theorem",
+      "desc_label": "Description (optional)",
+      "desc_placeholder": "What is this lesson about?",
+      "submit": "Create Lesson"
+    },
+    "create_flashcard": {
+      "title": "New Flashcard",
+      "question_label": "Question",
+      "question_placeholder": "Write the question...",
+      "answer_label": "Answer",
+      "answer_placeholder": "Write the answer...",
+      "difficulty_label": "Difficulty",
+      "submit": "Add"
+    }
   },
   "ranking": {
     "title": "Ranking & Achievements",
