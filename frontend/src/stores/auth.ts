@@ -4,7 +4,6 @@ import type { User } from '@/types'
 
 interface AuthState {
   user: User | null
-  token: string | null
 }
 
 interface LoginPayload {
@@ -27,7 +26,6 @@ interface AuthResponse {
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
-    token: null,
   }),
 
   getters: {
@@ -42,23 +40,21 @@ export const useAuthStore = defineStore('auth', {
     async login({ email, password }: LoginPayload): Promise<void> {
       const { data } = await axios.post<AuthResponse>('/api/auth/login', { email, password })
       this.user  = data.user
-      this.token = data.token
-      axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
     },
 
     async register({ name, lastName, email, password }: RegisterPayload): Promise<void> {
       const { data } = await axios.post<AuthResponse>('/api/auth/register', { name, lastName, email, password })
       this.user  = data.user
-      this.token = data.token
-      axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
     },
 
-    logout(): void {
-      this.user  = null
-      this.token = null
-      delete axios.defaults.headers.common['Authorization']
-    },
-  },
+    async logout(): Promise<void> {
+      try{
+        await axios.post('/api/auth/logout')
+      } finally {
+                      this.user  = null
+      }
+      }
 
+    },
   persist: true,
 })

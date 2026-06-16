@@ -63,9 +63,16 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+import axios from 'axios'
+import {useAuthStore} from '../stores/auth'
+import Swal from 'sweetalert2'
 
 export default defineComponent({
   name: 'LoginView',
+  setup() {
+    const authStore = useAuthStore();
+    return { authStore };
+  },
   data() {
     return {
       isLogin: true,
@@ -73,8 +80,38 @@ export default defineComponent({
     }
   },
   methods: {
-    handleSubmit(): void {
-      this.$router.push('/dashboard')
+    async handleSubmit(): Promise<void> {
+      try {
+        // determina endpoint in baso allo stato
+        const endpoint = this.isLogin ? '/api/auth/login' : '/api/auth/register';
+        
+        //controllo validazione lato client per registrazione
+        if (!this.isLogin && this.form.password !== this.form.confirmPassword) {
+          Swal.fire('Errore', 'Le password non coincidono', 'error');
+          return;
+        }
+        // chiamata ajax al backend
+        const response = await axios.post(endpoint, {
+          name: this.form.name,
+          lastName: this.form.lastName,
+          email: this.form.email,
+          password: this.form.password,
+        });
+
+        // aggiorna lo store pinia con dati utente ricevuti
+        this.authStore.setUser(response.data.user);
+        
+        // Navigazione protetta
+        Swal.fire({icon:'success', title: this.isLogin ? 'Login riuscito' : 'Registrazione riuscita', showConfirmButton: false});
+
+        this.$router.push('/dashboard');
+      
+      } catch (error:any) {
+        const message = error.response?.data?.message || 'Si è verificato un errore';
+        Swal.fire('Errore', message, 'error');
+        console.error('Auth error:', error);
+
+      }
     },
   },
 })
