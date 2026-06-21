@@ -1,8 +1,14 @@
+export interface UserSettings {
+  language?: Language
+  theme?: 'light' | 'dark'
+}
+
 export interface User {
   id: number
   name: string
   lastName: string
   email: string
+  settings?: UserSettings
 }
 
 export interface Subject {

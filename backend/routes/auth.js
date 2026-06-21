@@ -7,8 +7,10 @@ const db = require('../config/db');
 // --- REGISTRAZIONE ---
 router.post('/register', async (req, res) => {
     // 1. Usa 'password' (nome inviato dal frontend) non 'password_hash'
-    const { email, password, name, lastName } = req.body;
-    
+    // 'settings' (lingua/tema di default) viene calcolato dal frontend, che
+    // ha accesso alle preferenze del browser (prefers-color-scheme).
+    const { email, password, name, lastName, settings } = req.body;
+
     try {
         // Controllo preventivo: l'utente esiste già?
         const [existing] = await db.query('SELECT id FROM utenti WHERE email = ?', [email]);
@@ -16,17 +18,18 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ error: "Email già registrata" });
         }
 
-        // Hashing della password (sicurezza richiesta dalle specifiche) 
+        // Hashing della password (sicurezza richiesta dalle specifiche)
         const hashedPassword = await bcrypt.hash(password, 10);
-        
+        const initialSettings = settings || {};
+
         const sql = 'INSERT INTO utenti (email, password_hash, name, lastName, settings) VALUES (?, ?, ?, ?, ?)';
-        const [result] = await db.query(sql, [email, hashedPassword, name, lastName, JSON.stringify({})]);
+        const [result] = await db.query(sql, [email, hashedPassword, name, lastName, JSON.stringify(initialSettings)]);
 
         // Creazione Token JWT [3, 4]
         const token = jwt.sign({ id: result.insertId, email }, process.env.JWT_SECRET, { expiresIn: '2h' });
 
         // FONDAMENTALE: Invia l'oggetto user al frontend per evitare il pop-up di errore
-        const user = { id: result.insertId, email, name, lastName };
+        const user = { id: result.insertId, email, name, lastName, settings: initialSettings };
 
         res.cookie('access_token', token, {
             httpOnly: true, // Sicurezza XSS 
@@ -80,13 +83,22 @@ router.post('/login', async (req, res) => {
 });
 
 // --- SESSIONE CORRENTE ---
-router.get('/me', (req, res) => {
+router.get('/me', async (req, res) => {
     const token = req.cookies.access_token;
     if (!token) return res.status(401).json({ error: "Non autenticato" });
 
     try {
         const verified = jwt.verify(token, process.env.JWT_SECRET);
-        res.json({ id: verified.id, email: verified.email });
+
+        // Dati letti dal DB (non dal token), così sono sempre aggiornati
+        // rispetto a eventuali modifiche fatte dalla pagina Impostazioni.
+        const [rows] = await db.query(
+            'SELECT id, name, lastName, email, settings FROM utenti WHERE id = ?',
+            [verified.id]
+        );
+        if (!rows.length) return res.status(401).json({ error: "Utente non trovato" });
+
+        res.json(rows[0]);
     } catch {
         res.status(401).json({ error: "Token non valido o scaduto" });
     }

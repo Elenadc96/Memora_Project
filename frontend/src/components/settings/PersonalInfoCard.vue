@@ -111,6 +111,7 @@
 import { defineComponent } from 'vue'
 import { UserRound, KeyRound, ChevronDown, Pencil } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
+import { showSaveError } from '@/utils/notify'
 
 export default defineComponent({
   name: 'PersonalInfoCard',
@@ -156,16 +157,16 @@ export default defineComponent({
       this.isEditingInfo = false
     },
 
-    saveEditInfo(): void {
-      // TODO: collegare all'endpoint di aggiornamento profilo quando sarà disponibile
-      if (this.authStore.user) {
-        this.authStore.setUser({
-          ...this.authStore.user,
+    async saveEditInfo(): Promise<void> {
+      try {
+        await this.authStore.updateProfile({
           name: this.infoForm.name,
           lastName: this.infoForm.lastName,
         })
+        this.isEditingInfo = false
+      } catch {
+        showSaveError()
       }
-      this.isEditingInfo = false
     },
 
     submitPasswordChange(): void {

@@ -190,6 +190,7 @@
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
+    "save_error": "Change not saved, please try again later",
     "confirm": "Confirm",
     "cancel": "Cancel",
     "save": "Save",

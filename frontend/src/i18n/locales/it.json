@@ -190,6 +190,7 @@
   "common": {
     "loading": "Caricamento...",
     "error": "Si è verificato un errore",
+    "save_error": "Modifica non salvata, riprovare più tardi",
     "confirm": "Conferma",
     "cancel": "Annulla",
     "save": "Salva",

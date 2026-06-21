@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { changeLanguage } from '../i18n'
-import type { Language } from '@/types'
+import type { Language, UserSettings } from '@/types'
 
 interface UIState {
   isDark: boolean
@@ -12,6 +12,18 @@ export const useUIStore = defineStore('ui', {
     isDark: false,
     language: 'it',
   }),
+
+  getters: {
+    // Le settings (tema + lingua) sono un blob unico nel DB, senza colonne
+    // dedicate: va sempre inviato per intero, mai un campo alla volta,
+    // altrimenti il salvataggio di uno sovrascriverebbe l'altro.
+    currentSettings(state): UserSettings {
+      return {
+        theme: state.isDark ? 'dark' : 'light',
+        language: state.language,
+      }
+    },
+  },
 
   actions: {
     toggleDarkMode(): void {

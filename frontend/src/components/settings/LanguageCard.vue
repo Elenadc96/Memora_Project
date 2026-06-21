@@ -32,7 +32,9 @@
 import { defineComponent } from 'vue'
 import { Globe } from 'lucide-vue-next'
 import { useUIStore } from '@/stores/ui'
+import { useAuthStore } from '@/stores/auth'
 import { i18next } from '@/i18n'
+import { showSaveError } from '@/utils/notify'
 import type { Language } from '@/types'
 
 // Nomi nativi delle lingue conosciute. Se in futuro si aggiunge una lingua
@@ -48,7 +50,8 @@ export default defineComponent({
 
   setup() {
     const uiStore = useUIStore()
-    return { uiStore }
+    const authStore = useAuthStore()
+    return { uiStore, authStore }
   },
 
   computed: {
@@ -63,9 +66,23 @@ export default defineComponent({
       return LANGUAGE_NAMES[lang] || lang.toUpperCase()
     },
 
-    onLanguageChange(event: Event): void {
-      const value = (event.target as HTMLSelectElement).value as Language
-      this.uiStore.setLanguage(value)
+    async onLanguageChange(event: Event): Promise<void> {
+      const select = event.target as HTMLSelectElement
+      const value = select.value as Language
+
+      // Settings è un blob unico: va inviato completo (tema + lingua),
+      // non solo il campo che è cambiato.
+      const settings = { ...this.uiStore.currentSettings, language: value }
+      try {
+        await this.authStore.updateProfile({ settings })
+        // La lingua viene applicata in UI solo dopo che l'API ha confermato il salvataggio.
+        await this.uiStore.setLanguage(value)
+      } catch {
+        // La select mostra già visivamente il nuovo valore scelto: la
+        // riportiamo a quello corrente perché il salvataggio non è andato a buon fine.
+        select.value = this.uiStore.language
+        showSaveError()
+      }
     },
   },
 })
