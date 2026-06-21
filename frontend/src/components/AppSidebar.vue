@@ -70,16 +70,57 @@
 
     </nav>
 
-    <!-- ── Footer: impostazioni ──────────────────────────────────────── -->
+    <!-- ── Footer: utente + logout ──────────────────────────────────── -->
     <div class="p-3 border-t border-border">
-      <button
-        class="sidebar-item"
-        :class="{ 'sidebar-item--active': isRoute('/settings') }"
-        @click="$router.push('/settings')"
-      >
-        <Settings class="w-4 h-4" />
-        {{ $t('sidebar.settings') }}
-      </button>
+      <div class="relative flex items-center gap-2" ref="userMenu">
+
+        <!-- Pulsante utente con dropdown -->
+        <button
+          class="sidebar-item flex-1 min-w-0"
+          @click.stop="toggleDropdown"
+        >
+          <User class="w-4 h-4 flex-shrink-0" />
+          <span class="flex-1 text-left truncate">{{ fullName }}</span>
+          <ChevronDown
+            class="w-4 h-4 flex-shrink-0 transition-transform duration-200"
+            :class="{ 'rotate-180': showDropdown }"
+          />
+        </button>
+
+        <!-- Pulsante logout rapido -->
+        <button
+          class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-text-muted hover:text-red-500 transition-colors flex-shrink-0"
+          :title="$t('sidebar.logout')"
+          @click="confirmLogout"
+        >
+          <LogOut class="w-4 h-4" />
+        </button>
+
+        <!-- Menu a tendina (si apre verso l'alto) -->
+        <div
+          v-if="showDropdown"
+          class="absolute bottom-full left-0 right-10 mb-2 bg-surface border border-border rounded-xl shadow-lg overflow-hidden z-50"
+        >
+          <button
+            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-primary hover:bg-accent/10 transition-colors"
+            @click="goToSettings"
+          >
+            <Settings class="w-4 h-4" />
+            {{ $t('sidebar.settings') }}
+          </button>
+
+          <div class="border-t border-border mx-3" />
+
+          <button
+            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+            @click="confirmLogout"
+          >
+            <LogOut class="w-4 h-4" />
+            {{ $t('sidebar.logout') }}
+          </button>
+        </div>
+
+      </div>
     </div>
 
   </aside>
@@ -87,17 +128,40 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { BookOpen, LayoutDashboard, Trophy, Plus, Settings } from 'lucide-vue-next'
+import { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut } from 'lucide-vue-next'
 import { useFlashcardStore } from '@/stores/flashcards'
+import { useAuthStore } from '@/stores/auth'
+import Swal from 'sweetalert2'
 
 export default defineComponent({
   name: 'AppSidebar',
 
-  components: { BookOpen, LayoutDashboard, Trophy, Plus, Settings },
+  components: { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut },
 
   setup() {
-    const store = useFlashcardStore()
-    return { store }
+    const store    = useFlashcardStore()
+    const authStore = useAuthStore()
+    return { store, authStore }
+  },
+
+  data() {
+    return {
+      showDropdown: false,
+    }
+  },
+
+  computed: {
+    fullName(): string {
+      return this.authStore.fullName || this.$t('sidebar.settings')
+    },
+  },
+
+  mounted() {
+    document.addEventListener('click', this.handleOutsideClick)
+  },
+
+  beforeUnmount() {
+    document.removeEventListener('click', this.handleOutsideClick)
   },
 
   methods: {
@@ -112,6 +176,40 @@ export default defineComponent({
     selectSubject(id: number): void {
       this.store.selectSubject(id)
       this.$router.push(`/subject/${id}`)
+    },
+
+    toggleDropdown(): void {
+      this.showDropdown = !this.showDropdown
+    },
+
+    handleOutsideClick(event: MouseEvent): void {
+      const menu = this.$refs.userMenu as HTMLElement | undefined
+      if (menu && !menu.contains(event.target as Node)) {
+        this.showDropdown = false
+      }
+    },
+
+    goToSettings(): void {
+      this.showDropdown = false
+      this.$router.push('/settings')
+    },
+
+    async confirmLogout(): Promise<void> {
+      this.showDropdown = false
+      const result = await Swal.fire({
+        icon: 'question',
+        title: this.$t('sidebar.logout_confirm_title'),
+        text:  this.$t('sidebar.logout_confirm_text'),
+        showCancelButton: true,
+        confirmButtonText: this.$t('sidebar.logout_confirm_button'),
+        cancelButtonText:  this.$t('common.cancel'),
+        confirmButtonColor: '#ef4444',
+      })
+
+      if (result.isConfirmed) {
+        await this.authStore.logout()
+        this.$router.push('/login')
+      }
     },
   },
 })

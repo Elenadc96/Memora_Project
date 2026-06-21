@@ -27,7 +27,11 @@
     "ranking": "Ranking",
     "subjects_title": "Materie",
     "add_subject": "Aggiungi materia",
-    "settings": "Impostazioni"
+    "settings": "Impostazioni",
+    "logout": "Esci",
+    "logout_confirm_title": "Vuoi uscire?",
+    "logout_confirm_text": "Verrai reindirizzato alla pagina di login.",
+    "logout_confirm_button": "Esci"
   },
   "dashboard": {
     "title": "Panoramica Generale",

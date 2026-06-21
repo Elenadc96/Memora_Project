@@ -27,7 +27,11 @@
     "ranking": "Ranking",
     "subjects_title": "Subjects",
     "add_subject": "Add subject",
-    "settings": "Settings"
+    "settings": "Settings",
+    "logout": "Log out",
+    "logout_confirm_title": "Log out?",
+    "logout_confirm_text": "You will be redirected to the login page.",
+    "logout_confirm_button": "Log out"
   },
   "dashboard": {
     "title": "General Overview",
