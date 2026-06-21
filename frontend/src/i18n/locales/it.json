@@ -141,7 +141,51 @@
     "theme_dark": "Scuro",
     "notifications": "Notifiche",
     "save": "Salva modifiche",
-    "saved": "Modifiche salvate"
+    "saved": "Modifiche salvate",
+    "personal_data": {
+      "title": "Dati personali",
+      "name": "Nome",
+      "lastname": "Cognome",
+      "email": "Email",
+      "change_password": "Cambia password",
+      "current_password": "Password attuale",
+      "current_password_placeholder": "Inserisci la password attuale",
+      "new_password": "Nuova password",
+      "new_password_placeholder": "Inserisci la nuova password",
+      "confirm_password": "Conferma nuova password",
+      "confirm_password_placeholder": "Ripeti la nuova password",
+      "update_password": "Aggiorna password"
+    },
+    "privacy": {
+      "title": "Privacy",
+      "description": "Leggi come trattiamo i tuoi dati personali nella nostra informativa sulla privacy.",
+      "read_policy": "Leggi la Privacy Policy"
+    },
+    "danger_zone": {
+      "title": "Zona pericolosa",
+      "delete_account": "Elimina account",
+      "delete_account_description": "Una volta eliminato, l'account e tutti i dati associati verranno rimossi in modo permanente.",
+      "delete_confirm_title": "Elimina account",
+      "delete_confirm_message": "Questa azione è irreversibile: il tuo account, le materie e tutte le flashcard verranno eliminati definitivamente. Vuoi continuare?"
+    }
+  },
+  "privacy_policy": {
+    "title": "Informativa sulla Privacy",
+    "last_updated": "Ultimo aggiornamento: giugno 2026",
+    "intro_title": "Introduzione",
+    "intro_text": "Memora (\"noi\", \"l'app\") rispetta la tua privacy e si impegna a proteggere i tuoi dati personali. Questa informativa descrive quali dati raccogliamo, come li utilizziamo e quali diritti hai a riguardo.",
+    "data_title": "Dati raccolti",
+    "data_text": "Raccogliamo i dati che fornisci direttamente durante la registrazione (nome, cognome, indirizzo email) e i dati generati dall'utilizzo dell'app, come materie, lezioni, flashcard e statistiche di studio.",
+    "purpose_title": "Finalità del trattamento",
+    "purpose_text": "I dati raccolti sono utilizzati esclusivamente per fornire le funzionalità dell'app: autenticazione, salvataggio dei contenuti di studio, calcolo di punteggi e classifiche.",
+    "retention_title": "Conservazione dei dati",
+    "retention_text": "I tuoi dati vengono conservati per tutta la durata dell'account. In caso di eliminazione dell'account, tutti i dati associati vengono rimossi in modo permanente.",
+    "rights_title": "I tuoi diritti",
+    "rights_text": "Hai il diritto di accedere, correggere o richiedere la cancellazione dei tuoi dati personali in qualsiasi momento dalla sezione Impostazioni dell'app.",
+    "cookies_title": "Cookie",
+    "cookies_text": "Utilizziamo un cookie tecnico (access_token) necessario per mantenere la sessione di accesso. Non utilizziamo cookie di tracciamento o pubblicitari.",
+    "contact_title": "Contatti",
+    "contact_text": "Per qualsiasi domanda relativa al trattamento dei tuoi dati personali, puoi contattarci all'indirizzo support@memora.app."
   },
   "common": {
     "loading": "Caricamento...",

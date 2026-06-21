@@ -6,6 +6,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
   { path: '/login', name: 'Login', component: LoginView, meta: { requiresGuest: true } },
   { path: '/register', name: 'Register', component: () => import('../views/RegisterView.vue'), meta: { requiresGuest: true } },
+  { path: '/privacy-policy', name: 'PrivacyPolicy', component: () => import('../views/PrivacyPolicyView.vue') },
 
   {
     path: '/',
