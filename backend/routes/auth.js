@@ -79,9 +79,22 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// --- SESSIONE CORRENTE ---
+router.get('/me', (req, res) => {
+    const token = req.cookies.access_token;
+    if (!token) return res.status(401).json({ error: "Non autenticato" });
+
+    try {
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
+        res.json({ id: verified.id, email: verified.email });
+    } catch {
+        res.status(401).json({ error: "Token non valido o scaduto" });
+    }
+});
+
 // --- LOGOUT ---
 router.post('/logout', (req, res) => {
-    res.clearCookie('access_token'); 
+    res.clearCookie('access_token');
     res.json({ message: "Logout effettuato" });
 });
 

@@ -51,6 +51,15 @@ export const useAuthStore = defineStore('auth', {
       this.user = user
     },
 
+    async checkSession(): Promise<void> {
+      try {
+        const { data } = await axios.get('/api/auth/me')
+        this.user = { ...this.user, ...data } as User
+      } catch {
+        this.user = null
+      }
+    },
+
     async logout(): Promise<void> {
       try {
         await axios.post('/api/auth/logout')

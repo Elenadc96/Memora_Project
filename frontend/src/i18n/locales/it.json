@@ -1,4 +1,8 @@
 {
+  "session": {
+    "expired_title": "Sessione scaduta",
+    "expired_text": "Effettua nuovamente il login."
+  },
   "login": {
     "title": "MEMORA",
     "name": "Nome",
