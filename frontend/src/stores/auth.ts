@@ -47,14 +47,17 @@ export const useAuthStore = defineStore('auth', {
       this.user  = data.user
     },
 
+    setUser(user: User): void {
+      this.user = user
+    },
+
     async logout(): Promise<void> {
-      try{
+      try {
         await axios.post('/api/auth/logout')
       } finally {
-                      this.user  = null
+        this.user = null
       }
-      }
-
     },
+  },
   persist: true,
 })
