@@ -5,7 +5,7 @@ const db      = require('../config/db');
 // ── Health check ──────────────────────────────────────────────────────────
 router.get('/status', async (req, res) => {
   try {
-    await db.promise().query('SELECT 1');
+    await db.query('SELECT 1');
     res.json({ status: 'ok', message: 'Backend operativo', timestamp: new Date() });
   } catch (err) {
     res.status(500).json({ status: 'error', message: 'Database non raggiungibile' });
@@ -18,7 +18,7 @@ router.get('/status', async (req, res) => {
 // TODO: filtrare per req.user.id quando l'auth sarà implementata
 router.get('/subjects', async (req, res) => {
   try {
-    const [rows] = await db.promise().query(`
+    const [rows] = await db.query(`
       SELECT s.id, s.subjectName, s.description, s.color,
              COUNT(DISTINCT fl.flashcard_id) AS cardCount
       FROM subject s
@@ -37,7 +37,7 @@ router.get('/subjects', async (req, res) => {
 // GET /api/subjects/:id — dettaglio singola materia
 router.get('/subjects/:id', async (req, res) => {
   try {
-    const [rows] = await db.promise().query(`
+    const [rows] = await db.query(`
       SELECT s.id, s.subjectName, s.description, s.color,
              COUNT(DISTINCT l.id)           AS lessonCount,
              COUNT(DISTINCT fl.flashcard_id) AS cardCount
@@ -60,7 +60,7 @@ router.get('/subjects/:id', async (req, res) => {
 // GET /api/subjects/:id/lessons — lezioni di una materia con conteggio flashcard
 router.get('/subjects/:id/lessons', async (req, res) => {
   try {
-    const [rows] = await db.promise().query(`
+    const [rows] = await db.query(`
       SELECT l.id, l.name, l.description, l.subject_id,
              l.status, l.last_study, l.last_lesson_duration, l.created_at,
              COUNT(fl.flashcard_id) AS flashcardCount
@@ -82,11 +82,11 @@ router.post('/subjects/:id/lessons', async (req, res) => {
   try {
     const { name, description } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Il nome della lezione è obbligatorio' });
-    const [result] = await db.promise().query(
+    const [result] = await db.query(
       'INSERT INTO lessons (name, description, subject_id) VALUES (?, ?, ?)',
       [name.trim(), description?.trim() || null, req.params.id]
     );
-    const [rows] = await db.promise().query('SELECT * FROM lessons WHERE id = ?', [result.insertId]);
+    const [rows] = await db.query('SELECT * FROM lessons WHERE id = ?', [result.insertId]);
     res.status(201).json({ ...rows[0], flashcardCount: 0 });
   } catch (err) {
     console.error('POST /api/subjects/:id/lessons:', err);
@@ -103,21 +103,20 @@ router.post('/subjects/:id/lessons', async (req, res) => {
 // 2. Si cancella la lezione (il CASCADE pulisce flashcard_lesson)
 // 3. Si cancellano le flashcard orfane con quei id
 router.delete('/lessons/:id', async (req, res) => {
-  const conn = db.promise();
   try {
     // 1. Trova le flashcard della lezione prima che il CASCADE le scolleghi
-    const [fcRows] = await conn.query(
+    const [fcRows] = await db.query(
       'SELECT flashcard_id FROM flashcard_lesson WHERE lesson_id = ?',
       [req.params.id]
     );
     const flashcardIds = fcRows.map(r => r.flashcard_id);
 
     // 2. Elimina la lezione → CASCADE rimuove le righe in flashcard_lesson
-    await conn.query('DELETE FROM lessons WHERE id = ?', [req.params.id]);
+    await db.query('DELETE FROM lessons WHERE id = ?', [req.params.id]);
 
     // 3. Elimina le flashcard ora orfane
     if (flashcardIds.length > 0) {
-      await conn.query('DELETE FROM flashcard WHERE id IN (?)', [flashcardIds]);
+      await db.query('DELETE FROM flashcard WHERE id IN (?)', [flashcardIds]);
     }
 
     res.json({ success: true, deletedFlashcards: flashcardIds.length });
@@ -133,7 +132,7 @@ router.delete('/lessons/:id', async (req, res) => {
 // Il campo content (JSON) viene spacchettato in question/answer per il frontend
 router.get('/lessons/:id/flashcards', async (req, res) => {
   try {
-    const [rows] = await db.promise().query(`
+    const [rows] = await db.query(`
       SELECT f.id, f.content, f.difficult, f.created_at
       FROM flashcard f
       JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
@@ -161,11 +160,11 @@ router.post('/lessons/:id/flashcards', async (req, res) => {
       return res.status(400).json({ error: 'Domanda e risposta sono obbligatorie' });
     }
     const content = JSON.stringify({ question: question.trim(), answer: answer.trim() });
-    const [fcResult] = await db.promise().query(
+    const [fcResult] = await db.query(
       'INSERT INTO flashcard (content, difficult) VALUES (?, ?)',
       [content, difficult]
     );
-    await db.promise().query(
+    await db.query(
       'INSERT INTO flashcard_lesson (flashcard_id, lesson_id) VALUES (?, ?)',
       [fcResult.insertId, req.params.id]
     );
@@ -185,7 +184,7 @@ router.post('/lessons/:id/flashcards', async (req, res) => {
 // DELETE /api/flashcards/:id — elimina flashcard
 router.delete('/flashcards/:id', async (req, res) => {
   try {
-    await db.promise().query('DELETE FROM flashcard WHERE id = ?', [req.params.id]);
+    await db.query('DELETE FROM flashcard WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     console.error('DELETE /api/flashcards/:id:', err);

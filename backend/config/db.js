@@ -10,6 +10,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10
 });
+// TODO: rimuovere questi log prima di andare in produzione (espongono credenziali)
 console.log("DB USER:", process.env.DB_USER);
 console.log("DB PASSWORD:", process.env.DB_PASSWORD);
 console.log("DB PORT:", process.env.DB_PORT);
