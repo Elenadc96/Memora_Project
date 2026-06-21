@@ -53,7 +53,7 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: "Credenziali errate" });
         }
 
-        const user = rows;
+        const user = rows[0];
 
         // 3. Confronto tra password (chiaro) e password_hash (DB)
         // Se uno dei due è undefined, bcrypt lancia l'errore "data and hash arguments required"
