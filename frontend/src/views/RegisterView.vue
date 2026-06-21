@@ -11,10 +11,21 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
             </svg>
           </div>
+          <p class="text-primary mt-2 text-lg">{{ $t('register.title') }}</p>
         </div>
 
         <!-- Form -->
         <form @submit.prevent="handleSubmit" class="space-y-4">
+          <div class="space-y-1">
+            <label class="block text-sm text-primary">{{ $t('login.name') }}</label>
+            <input v-model="form.name" type="text" required class="input-field" />
+          </div>
+
+          <div class="space-y-1">
+            <label class="block text-sm text-primary">{{ $t('login.surname') }}</label>
+            <input v-model="form.lastName" type="text" required class="input-field" />
+          </div>
+
           <div class="space-y-1">
             <label class="block text-sm text-primary">{{ $t('login.email') }}</label>
             <input v-model="form.email" type="email" required class="input-field" />
@@ -25,16 +36,21 @@
             <input v-model="form.password" type="password" required class="input-field" />
           </div>
 
+          <div class="space-y-1">
+            <label class="block text-sm text-primary">{{ $t('login.confirm_password') }}</label>
+            <input v-model="form.confirmPassword" type="password" required class="input-field" />
+          </div>
+
           <button type="submit" class="btn-primary w-full mt-6">
-            {{ $t('login.login_button') }}
+            {{ $t('register.submit') }}
           </button>
         </form>
 
-        <!-- Link alla registrazione -->
+        <!-- Link al login -->
         <div class="mt-6 text-center">
-          <p class="text-primary mb-3">{{ $t('login.no_account') }}</p>
-          <router-link to="/register" class="btn-primary px-6">
-            {{ $t('login.register_button') }}
+          <p class="text-primary mb-3">{{ $t('login.has_account') }}</p>
+          <router-link to="/login" class="btn-primary px-6">
+            {{ $t('login.login_button') }}
           </router-link>
         </div>
 
@@ -45,24 +61,40 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { useAuthStore } from '../stores/auth'
+import axios from 'axios'
 import Swal from 'sweetalert2'
 
 export default defineComponent({
-  name: 'LoginView',
-  setup() {
-    return { authStore: useAuthStore() }
-  },
+  name: 'RegisterView',
   data() {
     return {
-      form: { email: '', password: '' },
+      form: { name: '', lastName: '', email: '', password: '', confirmPassword: '' },
     }
   },
   methods: {
     async handleSubmit(): Promise<void> {
+      if (this.form.password !== this.form.confirmPassword) {
+        Swal.fire({ icon: 'error', title: 'Errore', text: 'Le password non coincidono' })
+        return
+      }
+
       try {
-        await this.authStore.login({ email: this.form.email, password: this.form.password })
-        this.$router.push('/dashboard')
+        await axios.post('/api/auth/register', {
+          name:     this.form.name,
+          lastName: this.form.lastName,
+          email:    this.form.email,
+          password: this.form.password,
+        })
+
+        await Swal.fire({
+          icon: 'success',
+          title: this.$t('register.success_title'),
+          text:  this.$t('register.success_text'),
+          showConfirmButton: false,
+          timer: 2000,
+        })
+
+        this.$router.push('/login')
       } catch (error: any) {
         const message = error.response?.data?.error || this.$t('common.error')
         Swal.fire({ icon: 'error', title: 'Errore', text: message })

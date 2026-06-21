@@ -3,6 +3,12 @@
     "expired_title": "Sessione scaduta",
     "expired_text": "Effettua nuovamente il login."
   },
+  "register": {
+    "title": "Crea account",
+    "submit": "Crea account",
+    "success_title": "Registrazione completata!",
+    "success_text": "Puoi ora effettuare il login."
+  },
   "login": {
     "title": "MEMORA",
     "name": "Nome",

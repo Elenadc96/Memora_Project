@@ -5,6 +5,7 @@ import LoginView from '../views/LoginView.vue'
 const routes: RouteRecordRaw[] = [
   { path: '/', redirect: '/login' },
   { path: '/login', name: 'Login', component: LoginView, meta: { requiresGuest: true } },
+  { path: '/register', name: 'Register', component: () => import('../views/RegisterView.vue'), meta: { requiresGuest: true } },
 
   {
     path: '/',
