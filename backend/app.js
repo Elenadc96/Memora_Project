@@ -23,8 +23,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser()); // Necessario per leggere l'access_token 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ROTTE DI AUTENTICAZIONE 
-app.use('/api/auth', require('./routes/auth')); 
+// ROTTE DI AUTENTICAZIONE
+app.use('/api/auth', require('./routes/auth'));
+
+// ROTTE API PRINCIPALI (subjects, lessons, flashcards)
+app.use('/api', require('./routes/api'));
 
 app.use('/api/utenti', verifyToken, require('./routes/users'));
 app.use('/api/subject', verifyToken, require('./routes/subject'));

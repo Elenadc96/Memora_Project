@@ -3,13 +3,7 @@
 
     <!-- ── Header materia ─────────────────────────────────────────────── -->
     <div class="mb-6">
-      <!-- Breadcrumb / back -->
-      <button class="flex items-center gap-1 text-sm mb-4 btn-ghost py-1 px-2 -ml-2" @click="$router.push('/dashboard')">
-        <ChevronLeft class="w-4 h-4" />
-        {{ $t('subject.back') }}
-      </button>
-
-      <div class="flex items-start justify-between">
+<div class="flex items-start justify-between">
         <div class="flex items-center gap-3">
           <!-- Pallino colorato della materia -->
           <span
@@ -23,10 +17,28 @@
         </div>
 
         <!-- Azioni header -->
-        <button class="btn-primary flex items-center gap-2" @click="showCreateLesson = true">
-          <Plus class="w-4 h-4" />
-          {{ $t('subject.add_lesson') }}
-        </button>
+        <div class="flex items-center gap-2">
+          <button
+            class="btn-outline flex items-center gap-1.5"
+            :title="$t('common.edit')"
+            @click="showEditSubject = true"
+          >
+            <Pencil class="w-4 h-4" />
+            {{ $t('common.edit') }}
+          </button>
+          <button
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 text-red-500 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+            :title="$t('common.delete')"
+            @click="showDeleteSubjectConfirm = true"
+          >
+            <Trash2 class="w-4 h-4" />
+            {{ $t('common.delete') }}
+          </button>
+          <button class="btn-primary flex items-center gap-2" @click="showCreateLesson = true">
+            <Plus class="w-4 h-4" />
+            {{ $t('subject.add_lesson') }}
+          </button>
+        </div>
       </div>
 
       <!-- Stats della materia -->
@@ -92,25 +104,45 @@
       @confirm="confirmDeleteLesson"
     />
 
+    <!-- Modifica materia -->
+    <EditSubjectDialog
+      :open="showEditSubject"
+      :subject="subject"
+      @update:open="showEditSubject = $event"
+      @subject-updated="onSubjectUpdated"
+    />
+
+    <!-- Conferma eliminazione materia -->
+    <ConfirmDialog
+      v-model="showDeleteSubjectConfirm"
+      title="Elimina materia"
+      :message="`Stai per eliminare &quot;${subject?.subjectName}&quot; con tutte le sue lezioni e flashcard. L'operazione è irreversibile.`"
+      :danger="true"
+      :confirm-label="$t('common.delete')"
+      @confirm="confirmDeleteSubject"
+    />
+
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { ChevronLeft, Plus, BookOpen, Layers } from 'lucide-vue-next'
+import { Plus, BookOpen, Layers, Pencil, Trash2 } from 'lucide-vue-next'
 import { useFlashcardStore }   from '@/stores/flashcards'
 import type { Subject }        from '@/types'
+import Swal                    from 'sweetalert2'
 import LessonCard              from '@/components/subject/LessonCard.vue'
 import CreateLessonDialog      from '@/components/subject/CreateLessonDialog.vue'
 import CreateFlashcardDialog   from '@/components/subject/CreateFlashcardDialog.vue'
+import EditSubjectDialog       from '@/components/subject/EditSubjectDialog.vue'
 import ConfirmDialog           from '@/components/common/ConfirmDialog.vue'
 
 export default defineComponent({
   name: 'SubjectView',
 
   components: {
-    ChevronLeft, Plus, BookOpen, Layers,
-    LessonCard, CreateLessonDialog, CreateFlashcardDialog, ConfirmDialog,
+    Plus, BookOpen, Layers, Pencil, Trash2,
+    LessonCard, CreateLessonDialog, CreateFlashcardDialog, EditSubjectDialog, ConfirmDialog,
   },
 
   setup() {
@@ -119,11 +151,13 @@ export default defineComponent({
 
   data() {
     return {
-      showCreateLesson:    false,
-      showCreateFlashcard: false,
-      showDeleteConfirm:   false,
-      targetLessonId:      null as number | null,
-      pendingDeleteId:     null as number | null,
+      showCreateLesson:        false,
+      showCreateFlashcard:     false,
+      showDeleteConfirm:       false,
+      showEditSubject:         false,
+      showDeleteSubjectConfirm: false,
+      targetLessonId:          null as number | null,
+      pendingDeleteId:         null as number | null,
     }
   },
 
@@ -153,11 +187,11 @@ export default defineComponent({
 
   methods: {
     async onCreateLesson(payload: { name: string; description: string }): Promise<void> {
-      await this.store.createLesson({
-        subjectId:   this.subjectId,
-        name:        payload.name,
-        description: payload.description,
-      })
+      try {
+        await this.store.createLesson({ subjectId: this.subjectId, name: payload.name, description: payload.description })
+      } catch {
+        Swal.fire({ icon: 'error', title: 'Errore', text: 'Impossibile creare la lezione. Riprova.' })
+      }
     },
 
     onDeleteLesson(lessonId: number): void {
@@ -167,8 +201,12 @@ export default defineComponent({
 
     async confirmDeleteLesson(): Promise<void> {
       if (!this.pendingDeleteId) return
-      await this.store.deleteLesson(this.pendingDeleteId)
-      this.pendingDeleteId = null
+      try {
+        await this.store.deleteLesson(this.pendingDeleteId)
+        this.pendingDeleteId = null
+      } catch {
+        Swal.fire({ icon: 'error', title: 'Errore', text: 'Impossibile eliminare la lezione. Riprova.' })
+      }
     },
 
     openAddFlashcard(lessonId: number): void {
@@ -176,18 +214,38 @@ export default defineComponent({
       this.showCreateFlashcard = true
     },
 
-    // TODO: navigare a /study/:lessonId quando la sessione di studio sarà implementata.
     onStartLesson(lessonId: number): void {
       console.warn('TODO: avvia sessione di studio per la lezione', lessonId)
     },
 
     async onCreateFlashcard(payload: { lessonId: number; question: string; answer: string; difficult: number }): Promise<void> {
-      await this.store.createFlashcard({
-        lessonId:  payload.lessonId,
-        question:  payload.question,
-        answer:    payload.answer,
-        difficult: payload.difficult,
-      })
+      try {
+        await this.store.createFlashcard({
+          lessonId:  payload.lessonId,
+          question:  payload.question,
+          answer:    payload.answer,
+          difficult: payload.difficult,
+        })
+      } catch {
+        Swal.fire({ icon: 'error', title: 'Errore', text: 'Impossibile creare la flashcard. Riprova.' })
+      }
+    },
+
+    async onSubjectUpdated(payload: { name: string; description: string; color: string; emoji: string }): Promise<void> {
+      try {
+        await this.store.updateSubject(this.subjectId, payload)
+      } catch {
+        Swal.fire({ icon: 'error', title: 'Errore', text: 'Impossibile modificare la materia. Riprova.' })
+      }
+    },
+
+    async confirmDeleteSubject(): Promise<void> {
+      try {
+        await this.store.deleteSubject(this.subjectId)
+        this.$router.push('/dashboard')
+      } catch {
+        Swal.fire({ icon: 'error', title: 'Errore', text: 'Impossibile eliminare la materia. Riprova.' })
+      }
     },
   },
 })

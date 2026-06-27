@@ -41,7 +41,12 @@
              3. Avviare il componente StudySession che mostra le card una ad una,
                 registra le risposte e aggiorna status + last_study + last_lesson_duration
                 tramite una chiamata PATCH /api/lessons/:id -->
-        <button class="btn-primary py-1 px-3 text-xs flex items-center gap-1" @click="$emit('start-lesson', lesson.id)">
+        <button
+          class="btn-primary py-1 px-3 text-xs flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="(lesson.flashcardCount ?? 0) === 0"
+          :title="(lesson.flashcardCount ?? 0) === 0 ? $t('subject.start_lesson_disabled') : ''"
+          @click="$emit('start-lesson', lesson.id)"
+        >
           <Play class="w-3.5 h-3.5" />
           {{ $t('subject.start_lesson') }}
         </button>
@@ -94,6 +99,7 @@ import { ChevronRight, BookOpen, Clock, Plus, Trash2, Play } from 'lucide-vue-ne
 import { useFlashcardStore } from '@/stores/flashcards'
 import type { Lesson, Flashcard } from '@/types'
 import FlashcardItem from './FlashcardItem.vue'
+import Swal from 'sweetalert2'
 
 interface StatusInfo {
   label: string
@@ -147,7 +153,11 @@ export default defineComponent({
     },
 
     async onDeleteFlashcard(flashcardId: number): Promise<void> {
-      await this.store.deleteFlashcard({ flashcardId, lessonId: this.lesson.id })
+      try {
+        await this.store.deleteFlashcard({ flashcardId, lessonId: this.lesson.id })
+      } catch {
+        Swal.fire({ icon: 'error', title: 'Errore', text: 'Impossibile eliminare la flashcard. Riprova.' })
+      }
     },
   },
 })

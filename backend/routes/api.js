@@ -1,6 +1,7 @@
-const express = require('express');
-const router  = express.Router();
-const db      = require('../config/db');
+const express     = require('express');
+const router      = express.Router();
+const db          = require('../config/db');
+const verifyToken = require('../middleware/auth');
 
 // ── Health check ──────────────────────────────────────────────────────────
 router.get('/status', async (req, res) => {
@@ -14,19 +15,19 @@ router.get('/status', async (req, res) => {
 
 // ── Subjects ──────────────────────────────────────────────────────────────
 
-// GET /api/subjects — lista materie con conteggio flashcard
-// TODO: filtrare per req.user.id quando l'auth sarà implementata
-router.get('/subjects', async (req, res) => {
+// GET /api/subjects — lista materie dell'utente autenticato con conteggio flashcard
+router.get('/subjects', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT s.id, s.subjectName, s.description, s.color,
+      SELECT s.id, s.subjectName, s.description, s.color, s.emoji,
              COUNT(DISTINCT fl.flashcard_id) AS cardCount
       FROM subject s
-      LEFT JOIN lessons l          ON l.subject_id  = s.id
-      LEFT JOIN flashcard_lesson fl ON fl.lesson_id = l.id
-      GROUP BY s.id, s.subjectName, s.description, s.color
+      LEFT JOIN lessons l           ON l.subject_id  = s.id
+      LEFT JOIN flashcard_lesson fl ON fl.lesson_id  = l.id
+      WHERE s.user_id = ?
+      GROUP BY s.id, s.subjectName, s.description, s.color, s.emoji
       ORDER BY s.subjectName ASC
-    `);
+    `, [req.user.id]);
     res.json(rows);
   } catch (err) {
     console.error('GET /api/subjects:', err);
@@ -34,19 +35,79 @@ router.get('/subjects', async (req, res) => {
   }
 });
 
+// POST /api/subjects — crea nuova materia per l'utente autenticato
+router.post('/subjects', verifyToken, async (req, res) => {
+  try {
+    const { subjectName, description, color, emoji } = req.body;
+    if (!subjectName?.trim()) {
+      return res.status(400).json({ error: 'Il nome della materia è obbligatorio' });
+    }
+    const [result] = await db.query(
+      'INSERT INTO subject (user_id, subjectName, description, color, emoji) VALUES (?, ?, ?, ?, ?)',
+      [req.user.id, subjectName.trim(), description?.trim() || null, color || '#2563EB', emoji || '📚']
+    );
+    res.status(201).json({
+      id: result.insertId,
+      user_id: req.user.id,
+      subjectName: subjectName.trim(),
+      description: description?.trim() || '',
+      color: color || '#2563EB',
+      emoji: emoji || '📚',
+      cardCount: 0,
+    });
+  } catch (err) {
+    console.error('POST /api/subjects:', err);
+    res.status(500).json({ error: 'Errore nella creazione della materia' });
+  }
+});
+
+// PUT /api/subjects/:id — modifica materia
+router.put('/subjects/:id', verifyToken, async (req, res) => {
+  try {
+    const { subjectName, description, color, emoji } = req.body;
+    if (!subjectName?.trim()) {
+      return res.status(400).json({ error: 'Il nome della materia è obbligatorio' });
+    }
+    const [result] = await db.query(
+      'UPDATE subject SET subjectName = ?, description = ?, color = ?, emoji = ? WHERE id = ? AND user_id = ?',
+      [subjectName.trim(), description?.trim() || null, color || '#2563EB', emoji || '📚', req.params.id, req.user.id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Materia non trovata' });
+    res.json({ id: Number(req.params.id), subjectName: subjectName.trim(), description: description?.trim() || '', color: color || '#2563EB', emoji: emoji || '📚' });
+  } catch (err) {
+    console.error('PUT /api/subjects/:id:', err);
+    res.status(500).json({ error: 'Errore nella modifica della materia' });
+  }
+});
+
+// DELETE /api/subjects/:id — elimina materia e tutto il suo contenuto (CASCADE nel DB)
+router.delete('/subjects/:id', verifyToken, async (req, res) => {
+  try {
+    const [result] = await db.query(
+      'DELETE FROM subject WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Materia non trovata' });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('DELETE /api/subjects/:id:', err);
+    res.status(500).json({ error: 'Errore nell\'eliminazione della materia' });
+  }
+});
+
 // GET /api/subjects/:id — dettaglio singola materia
-router.get('/subjects/:id', async (req, res) => {
+router.get('/subjects/:id', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT s.id, s.subjectName, s.description, s.color,
+      SELECT s.id, s.subjectName, s.description, s.color, s.emoji,
              COUNT(DISTINCT l.id)           AS lessonCount,
              COUNT(DISTINCT fl.flashcard_id) AS cardCount
       FROM subject s
-      LEFT JOIN lessons l          ON l.subject_id  = s.id
-      LEFT JOIN flashcard_lesson fl ON fl.lesson_id = l.id
-      WHERE s.id = ?
+      LEFT JOIN lessons l           ON l.subject_id  = s.id
+      LEFT JOIN flashcard_lesson fl ON fl.lesson_id  = l.id
+      WHERE s.id = ? AND s.user_id = ?
       GROUP BY s.id
-    `, [req.params.id]);
+    `, [req.params.id, req.user.id]);
     if (!rows.length) return res.status(404).json({ error: 'Materia non trovata' });
     res.json(rows[0]);
   } catch (err) {

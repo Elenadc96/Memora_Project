@@ -73,6 +73,7 @@
     "no_lessons": "No lessons yet. Create one to get started!",
     "no_flashcards": "No flashcards in this lesson yet. Add one!",
     "start_lesson": "Start lesson",
+    "start_lesson_disabled": "Add at least one flashcard to start the lesson",
     "tap_to_reveal": "Tap to reveal answer",
     "delete_lesson_title": "Delete lesson",
     "delete_lesson_message": "You are about to delete this lesson and all its flashcards. This action cannot be undone.",

@@ -73,6 +73,7 @@
     "no_lessons": "Nessuna lezione ancora. Creane una per iniziare!",
     "no_flashcards": "Nessuna flashcard in questa lezione. Aggiungine una!",
     "start_lesson": "Inizia lezione",
+    "start_lesson_disabled": "Aggiungi almeno una flashcard per iniziare la lezione",
     "tap_to_reveal": "Tocca per vedere la risposta",
     "delete_lesson_title": "Elimina lezione",
     "delete_lesson_message": "Stai per eliminare questa lezione insieme a tutte le sue flashcard. L'operazione non è reversibile.",

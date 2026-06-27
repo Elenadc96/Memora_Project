@@ -1,4 +1,10 @@
-import type { Lesson, Flashcard } from '@/types'
+import type { Subject, Lesson, Flashcard } from '@/types'
+
+export const mockSubjects: Subject[] = [
+  { id: 1, subjectName: 'Matematica', description: 'Studio della matematica di base', color: '#2563EB', emoji: '📐', cardCount: 3, user_id: 0 },
+  { id: 2, subjectName: 'Fisica',     description: 'Fondamenti di fisica',            color: '#06B6D4', emoji: '🔬', cardCount: 4, user_id: 0 },
+  { id: 3, subjectName: 'Storia',     description: 'Storia mondiale e italiana',      color: '#8B5CF6', emoji: '🏛️', cardCount: 7, user_id: 0 },
+]
 
 export const mockLessons: Record<number, Lesson[]> = {
   1: [

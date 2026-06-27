@@ -16,6 +16,7 @@ export interface Subject {
   subjectName: string
   description: string
   color: string
+  emoji: string
   cardCount: number
   user_id: number
 }

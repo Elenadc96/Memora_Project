@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import { mockLessons, mockFlashcards } from '../data/mockSubjectData'
+import { mockSubjects, mockLessons, mockFlashcards } from '../data/mockSubjectData'
 import type { Subject, Lesson, Flashcard } from '@/types'
 
 interface FlashcardState {
@@ -55,6 +55,8 @@ export const useFlashcardStore = defineStore('flashcards', {
   },
 
   actions: {
+    // ── Subjects ────────────────────────────────────────────────────────────
+
     async fetchSubjects(): Promise<void> {
       this.loading = true
       this.error   = null
@@ -62,11 +64,60 @@ export const useFlashcardStore = defineStore('flashcards', {
         const { data } = await axios.get<Subject[]>('/api/subjects')
         this.subjects = data
       } catch (e) {
-        this.error = (e as Error).message
+        this.error    = (e as Error).message
+        this.subjects = mockSubjects
       } finally {
         this.loading = false
       }
     },
+
+    // Aggiorna il cardCount di una materia rileggendolo dal DB.
+    // Non-bloccante: se fallisce lascia il valore precedente.
+    async _refreshSubjectCardCount(subjectId: number): Promise<void> {
+      try {
+        const { data } = await axios.get<Subject>(`/api/subjects/${subjectId}`)
+        const idx = this.subjects.findIndex((s) => s.id === subjectId)
+        if (idx !== -1) this.subjects[idx].cardCount = data.cardCount
+      } catch { /* non critico */ }
+    },
+
+    async createSubject(payload: { name: string; description: string; color: string; emoji: string }): Promise<Subject> {
+      const { data } = await axios.post<Subject>('/api/subjects', {
+        subjectName: payload.name,
+        description: payload.description,
+        color:       payload.color,
+        emoji:       payload.emoji,
+      })
+      this.subjects.push(data)
+      return data
+    },
+
+    async updateSubject(id: number, payload: { name: string; description: string; color: string; emoji: string }): Promise<void> {
+      await axios.put(`/api/subjects/${id}`, {
+        subjectName: payload.name,
+        description: payload.description,
+        color:       payload.color,
+        emoji:       payload.emoji,
+      })
+      const idx = this.subjects.findIndex((s) => s.id === id)
+      if (idx !== -1) {
+        this.subjects[idx] = {
+          ...this.subjects[idx],
+          subjectName: payload.name,
+          description: payload.description,
+          color:       payload.color,
+          emoji:       payload.emoji,
+        }
+      }
+    },
+
+    async deleteSubject(id: number): Promise<void> {
+      await axios.delete(`/api/subjects/${id}`)
+      this.subjects = this.subjects.filter((s) => s.id !== id)
+      if (this.selectedSubjectId === id) this.selectedSubjectId = null
+    },
+
+    // ── Lessons ─────────────────────────────────────────────────────────────
 
     selectSubject(id: number | null): void {
       this.selectedSubjectId = id
@@ -91,32 +142,21 @@ export const useFlashcardStore = defineStore('flashcards', {
     },
 
     async createLesson({ subjectId, name, description }: CreateLessonPayload): Promise<Lesson> {
-      try {
-        const { data } = await axios.post<Lesson>(`/api/subjects/${subjectId}/lessons`, { name, description })
-        this.lessons.push(data)
-        return data
-      } catch {
-        const newLesson: Lesson = {
-          id: -(Date.now()),
-          name, description,
-          subject_id: subjectId,
-          status: 0,
-          last_study: null,
-          last_lesson_duration: 0,
-          flashcardCount: 0,
-        }
-        this.lessons.push(newLesson)
-        return newLesson
-      }
+      const { data } = await axios.post<Lesson>(`/api/subjects/${subjectId}/lessons`, { name, description })
+      this.lessons.push(data)
+      await this._refreshSubjectCardCount(subjectId)
+      return data
     },
 
     async deleteLesson(lessonId: number): Promise<void> {
-      try {
-        await axios.delete(`/api/lessons/${lessonId}`)
-      } catch { /* mock: procede comunque */ }
+      const lesson = this.lessons.find((l) => l.id === lessonId)
+      await axios.delete(`/api/lessons/${lessonId}`)
       this.lessons = this.lessons.filter((l) => l.id !== lessonId)
       delete this.flashcardsByLesson[lessonId]
+      if (lesson?.subject_id) await this._refreshSubjectCardCount(lesson.subject_id)
     },
+
+    // ── Flashcards ──────────────────────────────────────────────────────────
 
     async fetchFlashcardsForLesson(lessonId: number): Promise<void> {
       if (this.hasFlashcardsLoaded(lessonId)) return
@@ -124,31 +164,20 @@ export const useFlashcardStore = defineStore('flashcards', {
         const { data } = await axios.get<Flashcard[]>(`/api/lessons/${lessonId}/flashcards`)
         this.flashcardsByLesson = { ...this.flashcardsByLesson, [lessonId]: data }
       } catch {
-        const mock = mockFlashcards[lessonId] ?? []
-        this.flashcardsByLesson = { ...this.flashcardsByLesson, [lessonId]: mock }
+        this.flashcardsByLesson = { ...this.flashcardsByLesson, [lessonId]: mockFlashcards[lessonId] ?? [] }
       }
     },
 
     async createFlashcard({ lessonId, question, answer, difficult = 0 }: CreateFlashcardPayload): Promise<Flashcard> {
-      try {
-        const { data } = await axios.post<Flashcard>(`/api/lessons/${lessonId}/flashcards`, {
-          question, answer, difficult,
-        })
-        this._appendFlashcard(lessonId, data)
-        this._incrementLessonCount(lessonId)
-        return data
-      } catch {
-        const newCard: Flashcard = { id: -(Date.now()), question, answer, difficult }
-        this._appendFlashcard(lessonId, newCard)
-        this._incrementLessonCount(lessonId)
-        return newCard
-      }
+      const { data } = await axios.post<Flashcard>(`/api/lessons/${lessonId}/flashcards`, { question, answer, difficult })
+      this._appendFlashcard(lessonId, data)
+      this._incrementLessonCount(lessonId)
+      if (this.selectedSubjectId) await this._refreshSubjectCardCount(this.selectedSubjectId)
+      return data
     },
 
     async deleteFlashcard({ flashcardId, lessonId }: DeleteFlashcardPayload): Promise<void> {
-      try {
-        await axios.delete(`/api/flashcards/${flashcardId}`)
-      } catch { /* mock: procede comunque */ }
+      await axios.delete(`/api/flashcards/${flashcardId}`)
       if (this.flashcardsByLesson[lessonId]) {
         this.flashcardsByLesson = {
           ...this.flashcardsByLesson,
@@ -156,7 +185,10 @@ export const useFlashcardStore = defineStore('flashcards', {
         }
       }
       this._decrementLessonCount(lessonId)
+      if (this.selectedSubjectId) await this._refreshSubjectCardCount(this.selectedSubjectId)
     },
+
+    // ── Helpers privati ─────────────────────────────────────────────────────
 
     _appendFlashcard(lessonId: number, card: Flashcard): void {
       const current = this.flashcardsByLesson[lessonId] ?? []

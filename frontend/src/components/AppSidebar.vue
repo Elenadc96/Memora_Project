@@ -37,10 +37,10 @@
         <span class="text-xs font-semibold uppercase tracking-wider text-text-muted dark:text-on-surface/60">
           {{ $t('sidebar.subjects_title') }}
         </span>
-        <!-- Il bottone + aprirà in futuro un dialog per aggiungere una materia -->
         <button
           class="w-6 h-6 flex items-center justify-center rounded hover:bg-accent/10 text-primary dark:text-on-surface"
           :title="$t('sidebar.add_subject')"
+          @click="createOpen = true"
         >
           <Plus class="w-4 h-4" />
         </button>
@@ -54,19 +54,36 @@
         :class="{ 'sidebar-item--active': isActiveSubject(subject.id) }"
         @click="selectSubject(subject.id)"
       >
-        <!-- Pallino colorato: il colore è una proprietà della materia salvata nel DB -->
-        <span class="w-3 h-3 rounded-full flex-shrink-0" :style="{ backgroundColor: subject.color }" />
+        <span
+          class="w-6 h-6 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
+          :style="{
+            backgroundColor: subject.color + '22',
+            border: `1.5px solid ${subject.color}55`,
+          }"
+        >{{ subject.emoji }}</span>
         <span class="flex-1 text-left truncate">{{ subject.subjectName }}</span>
-        <!-- Badge con numero di carte: testo piccolo, sfondo tenue -->
         <span class="text-xs bg-accent/10 dark:bg-white/10 px-2 py-0.5 rounded-full">
           {{ subject.cardCount }}
         </span>
       </button>
 
-      <!-- Stato vuoto: mostrato mentre il backend non è ancora collegato -->
-      <p v-if="!store.subjects.length" class="px-3 py-2 text-sm text-text-muted dark:text-on-surface/50 italic">
-        {{ store.loading ? $t('common.loading') : 'Nessuna materia' }}
+      <!-- Stato vuoto -->
+      <p v-if="!store.subjects.length && store.loading" class="px-3 py-2 text-sm text-text-muted dark:text-on-surface/50 italic">
+        {{ $t('common.loading') }}
       </p>
+      <button
+        v-if="!store.subjects.length && !store.loading"
+        class="w-full py-3 rounded-lg border border-dashed border-border text-text-muted dark:text-on-surface/50 text-sm hover:border-accent/50 hover:text-accent transition-colors"
+        @click="createOpen = true"
+      >
+        + Aggiungi materia
+      </button>
+
+      <CreateSubjectDialog
+        :open="createOpen"
+        @update:open="createOpen = $event"
+        @subject-created="handleSubjectCreated"
+      />
 
     </nav>
 
@@ -131,12 +148,13 @@ import { defineComponent } from 'vue'
 import { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut } from 'lucide-vue-next'
 import { useFlashcardStore } from '@/stores/flashcards'
 import { useAuthStore } from '@/stores/auth'
+import CreateSubjectDialog from '@/components/subject/CreateSubjectDialog.vue'
 import Swal from 'sweetalert2'
 
 export default defineComponent({
   name: 'AppSidebar',
 
-  components: { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut },
+  components: { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut, CreateSubjectDialog },
 
   setup() {
     const store    = useFlashcardStore()
@@ -147,6 +165,7 @@ export default defineComponent({
   data() {
     return {
       showDropdown: false,
+      createOpen: false,
     }
   },
 
@@ -176,6 +195,16 @@ export default defineComponent({
     selectSubject(id: number): void {
       this.store.selectSubject(id)
       this.$router.push(`/subject/${id}`)
+    },
+
+    async handleSubjectCreated(payload: { name: string; description: string; color: string; emoji: string }): Promise<void> {
+      try {
+        const subject = await this.store.createSubject(payload)
+        this.store.selectSubject(subject.id)
+        this.$router.push(`/subject/${subject.id}`)
+      } catch {
+        Swal.fire({ icon: 'error', title: 'Errore', text: 'Impossibile creare la materia. Riprova.' })
+      }
     },
 
     toggleDropdown(): void {
