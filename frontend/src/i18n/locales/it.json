@@ -154,7 +154,11 @@
       "new_password_placeholder": "Inserisci la nuova password",
       "confirm_password": "Conferma nuova password",
       "confirm_password_placeholder": "Ripeti la nuova password",
-      "update_password": "Aggiorna password"
+      "update_password": "Aggiorna password",
+      "password_updated": "Password aggiornata con successo",
+      "password_mismatch": "Le due password non coincidono",
+      "password_too_short": "La nuova password deve avere almeno 8 caratteri",
+      "password_wrong_current": "Password attuale non corretta"
     },
     "privacy": {
       "title": "Privacy",
@@ -195,6 +199,7 @@
     "cancel": "Annulla",
     "save": "Salva",
     "delete": "Elimina",
-    "edit": "Modifica"
+    "edit": "Modifica",
+    "too_many_requests": "Troppi tentativi. Riprova tra 15 minuti."
   }
 }

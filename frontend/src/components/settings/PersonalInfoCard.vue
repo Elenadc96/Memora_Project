@@ -1,7 +1,5 @@
 <!--
-  PersonalInfoCard — visualizza i dati personali dell'utente e contiene
-  il bottone per espandere il form di cambio password.
-  Solo UI: il submit del form non chiama ancora nessuna API.
+  PersonalInfoCard — dati personali (nome/cognome/email) e cambio password.
 -->
 <template>
   <div class="card space-y-4">
@@ -96,8 +94,12 @@
             />
           </div>
 
+          <p v-if="passwordError" class="text-sm text-red-500">{{ passwordError }}</p>
+          <p v-if="passwordSuccess" class="text-sm text-green-600">{{ $t('settings.personal_data.password_updated') }}</p>
+
           <div class="flex justify-end">
-            <button type="submit" class="btn-primary">
+            <button type="submit" class="btn-primary" :disabled="passwordLoading">
+              <span v-if="passwordLoading" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
               {{ $t('settings.personal_data.update_password') }}
             </button>
           </div>
@@ -137,6 +139,9 @@ export default defineComponent({
         newPassword: '',
         confirm: '',
       },
+      passwordLoading: false,
+      passwordError: '',
+      passwordSuccess: false,
     }
   },
 
@@ -169,10 +174,40 @@ export default defineComponent({
       }
     },
 
-    submitPasswordChange(): void {
-      // TODO: collegare all'endpoint di cambio password quando sarà disponibile
-      this.passwordForm = { current: '', newPassword: '', confirm: '' }
-      this.showPasswordForm = false
+    async submitPasswordChange(): Promise<void> {
+      this.passwordError = ''
+      this.passwordSuccess = false
+
+      if (this.passwordForm.newPassword !== this.passwordForm.confirm) {
+        this.passwordError = this.$t('settings.personal_data.password_mismatch')
+        return
+      }
+      if (this.passwordForm.newPassword.length < 8) {
+        this.passwordError = this.$t('settings.personal_data.password_too_short')
+        return
+      }
+
+      this.passwordLoading = true
+      try {
+        await this.authStore.changePassword(this.passwordForm.current, this.passwordForm.newPassword)
+        this.passwordForm = { current: '', newPassword: '', confirm: '' }
+        this.passwordSuccess = true
+        setTimeout(() => {
+          this.passwordSuccess = false
+          this.showPasswordForm = false
+        }, 2500)
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status
+        if (status === 401) {
+          this.passwordError = this.$t('settings.personal_data.password_wrong_current')
+        } else if (status === 429) {
+          this.passwordError = this.$t('common.too_many_requests')
+        } else {
+          this.passwordError = this.$t('common.save_error')
+        }
+      } finally {
+        this.passwordLoading = false
+      }
     },
   },
 })

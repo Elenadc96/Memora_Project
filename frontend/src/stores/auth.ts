@@ -92,6 +92,10 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+      await axios.patch('/api/utenti/password', { currentPassword, newPassword })
+    },
+
     async logout(): Promise<void> {
       try {
         await axios.post('/api/auth/logout')
