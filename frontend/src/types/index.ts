@@ -18,6 +18,7 @@ export interface Subject {
   color: string
   emoji: string
   cardCount: number
+  masteredCount: number
   user_id: number
 }
 

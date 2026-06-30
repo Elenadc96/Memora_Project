@@ -15,12 +15,13 @@ router.get('/status', async (req, res) => {
 
 // ── Subjects ──────────────────────────────────────────────────────────────
 
-// GET /api/subjects — lista materie dell'utente autenticato con conteggio flashcard
+// GET /api/subjects — lista materie dell'utente autenticato con conteggio flashcard e mastered
 router.get('/subjects', verifyToken, async (req, res) => {
   try {
     const [rows] = await db.query(`
       SELECT s.id, s.subjectName, s.description, s.color, s.emoji,
-             COUNT(DISTINCT fl.flashcard_id) AS cardCount
+             COUNT(DISTINCT fl.flashcard_id)                AS cardCount,
+             SUM(fl.status = 'mastered')                   AS masteredCount
       FROM subject s
       LEFT JOIN lessons l           ON l.subject_id  = s.id
       LEFT JOIN flashcard_lesson fl ON fl.lesson_id  = l.id
@@ -342,6 +343,111 @@ router.delete('/flashcards/:id', async (req, res) => {
   } catch (err) {
     console.error('DELETE /api/flashcards/:id:', err);
     res.status(500).json({ error: 'Errore nell\'eliminazione della flashcard' });
+  }
+});
+
+// ── Dashboard ─────────────────────────────────────────────────────────────
+
+// GET /api/dashboard — aggregato per la dashboard: stat cards, grafico settimanale
+router.get('/dashboard', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Totale flashcard dell'utente
+    const [[{ totalFlashcards }]] = await db.query(`
+      SELECT COUNT(DISTINCT fl.flashcard_id) AS totalFlashcards
+      FROM flashcard_lesson fl
+      JOIN lessons l ON l.id = fl.lesson_id
+      JOIN subject s ON s.id = l.subject_id
+      WHERE s.user_id = ?
+    `, [userId]);
+
+    // Flashcard studiate oggi e tempo di studio odierno
+    const [[todayRow]] = await db.query(`
+      SELECT
+        COALESCE(SUM(
+          JSON_EXTRACT(result, '$.knew') +
+          JSON_EXTRACT(result, '$.almost') +
+          JSON_EXTRACT(result, '$.forgot')
+        ), 0) AS studiedToday,
+        COALESCE(SUM(session_duration), 0) AS studyTimeMinutes
+      FROM sessioni
+      WHERE user_id = ? AND DATE(created_at) = CURDATE() AND result IS NOT NULL
+    `, [userId]);
+
+    // Tasso di successo: 30gg e storico in un'unica query
+    // AVG ignora i NULL, quindi il CASE filtra efficacemente per finestra temporale
+    const [[rateRow]] = await db.query(`
+      SELECT
+        ROUND(AVG(CASE
+          WHEN (JSON_EXTRACT(result, '$.knew') + JSON_EXTRACT(result, '$.almost') + JSON_EXTRACT(result, '$.forgot')) > 0
+          THEN JSON_EXTRACT(result, '$.knew') /
+               (JSON_EXTRACT(result, '$.knew') + JSON_EXTRACT(result, '$.almost') + JSON_EXTRACT(result, '$.forgot')) * 100
+        END)) AS successRateAll,
+        ROUND(AVG(CASE
+          WHEN created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            AND (JSON_EXTRACT(result, '$.knew') + JSON_EXTRACT(result, '$.almost') + JSON_EXTRACT(result, '$.forgot')) > 0
+          THEN JSON_EXTRACT(result, '$.knew') /
+               (JSON_EXTRACT(result, '$.knew') + JSON_EXTRACT(result, '$.almost') + JSON_EXTRACT(result, '$.forgot')) * 100
+        END)) AS successRate30d
+      FROM sessioni
+      WHERE user_id = ? AND result IS NOT NULL
+    `, [userId]);
+
+    // Streak dall'utente
+    const [[pointsRow]] = await db.query(`
+      SELECT COALESCE(streak_days, 0) AS streak FROM points WHERE user_id = ?
+    `, [userId]);
+
+    // Attività settimanale: ultimi 7 giorni raggruppati per data
+    const [weekRows] = await db.query(`
+      SELECT
+        DATE(created_at) AS day,
+        COALESCE(SUM(
+          JSON_EXTRACT(result, '$.knew') +
+          JSON_EXTRACT(result, '$.almost') +
+          JSON_EXTRACT(result, '$.forgot')
+        ), 0) AS studied,
+        COALESCE(SUM(JSON_EXTRACT(result, '$.knew')), 0) AS correct
+      FROM sessioni
+      WHERE user_id = ?
+        AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        AND result IS NOT NULL
+      GROUP BY DATE(created_at)
+    `, [userId]);
+
+    // Costruisce array 7 giorni riempiendo i buchi con 0
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+    const weeklyActivity = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      const found = weekRows.find(r => {
+        const rDate = r.day instanceof Date
+          ? r.day.toISOString().slice(0, 10)
+          : String(r.day).slice(0, 10);
+        return rDate === dateStr;
+      });
+      weeklyActivity.push({
+        day: dayNames[d.getDay()],
+        studied: found ? Number(found.studied) : 0,
+        correct: found ? Number(found.correct) : 0,
+      });
+    }
+
+    res.json({
+      totalFlashcards:  Number(totalFlashcards),
+      studiedToday:     Number(todayRow.studiedToday),
+      studyTimeMinutes: Number(todayRow.studyTimeMinutes),
+      successRate30d:   rateRow.successRate30d  != null ? Number(rateRow.successRate30d)  : null,
+      successRateAll:   rateRow.successRateAll  != null ? Number(rateRow.successRateAll)  : null,
+      streak:           pointsRow ? Number(pointsRow.streak) : 0,
+      weeklyActivity,
+    });
+  } catch (err) {
+    console.error('GET /api/dashboard:', err);
+    res.status(500).json({ error: 'Errore nel recupero dei dati della dashboard' });
   }
 });
 
