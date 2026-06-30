@@ -21,6 +21,14 @@ export interface Subject {
   user_id: number
 }
 
+export interface Flashcard {
+  id: number
+  question: string
+  answer: string
+  difficult: number
+  status?: CardStatus
+}
+
 export interface Lesson {
   id: number
   name: string
@@ -30,13 +38,11 @@ export interface Lesson {
   last_study: string | null
   last_lesson_duration: number
   flashcardCount: number
-}
-
-export interface Flashcard {
-  id: number
-  question: string
-  answer: string
-  difficult: number
+  mastered_count?: number
+  review_count?: number
+  created_at?: string
 }
 
 export type Language = 'it' | 'en'
+export type CardStatus = 'mastered' | 'learning' | 'review'
+export type DifficultyLevel = 'Facile' | 'Media' | 'Difficile'

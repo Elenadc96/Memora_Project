@@ -66,10 +66,17 @@
   "subject": {
     "back": "Indietro",
     "study_now": "Studia ora",
+    "study": "Studia",
     "add_lesson": "Aggiungi Lezione",
     "add_flashcard": "Flashcard",
-    "lessons_count": "lezioni",
+    "lessons_count": "Lezioni",
+    "total_flashcards": "Flashcard totali",
+    "mastered_percent": "Padroneggiato",
+    "create_first_lesson": "Crea prima lezione",
     "cards_count": "flashcard",
+    "chip_cards": "carte",
+    "chip_mastered": "padroneggiate",
+    "chip_review": "da ripassare",
     "no_lessons": "Nessuna lezione ancora. Creane una per iniziare!",
     "no_flashcards": "Nessuna flashcard in questa lezione. Aggiungine una!",
     "start_lesson": "Inizia lezione",
@@ -94,6 +101,40 @@
       "difficulty_label": "Difficoltà",
       "submit": "Aggiungi"
     }
+  },
+  "lesson": {
+    "total_cards": "Totale carte",
+    "mastered": "Padroneggiate",
+    "to_review": "Da ripassare",
+    "progress": "Progresso",
+    "mastered_pct": "{{pct}}% padroneggiato",
+    "search_placeholder": "Cerca flashcard...",
+    "filter_all": "Tutte",
+    "filter_mastered": "Padroneggiate",
+    "filter_learning": "In Studio",
+    "filter_review": "Da Ripassare",
+    "status_mastered": "Padroneggiata",
+    "status_learning": "In studio",
+    "status_review": "Da ripassare"
+  },
+  "study": {
+    "question": "Domanda",
+    "answer": "Risposta",
+    "click_to_reveal": "Clicca per vedere la risposta",
+    "show_answer": "Mostra risposta",
+    "knew": "Lo sapevo!",
+    "almost": "Quasi...",
+    "forgot": "Non lo sapevo",
+    "knew_short": "Sapevo",
+    "almost_short": "Quasi",
+    "forgot_short": "Non sapevo",
+    "correct": "corretto",
+    "result_great": "Ottimo lavoro! 🎉",
+    "result_good": "Buona sessione 💪",
+    "result_keep_going": "Continua a studiare 📚",
+    "cards_studied": "carte studiate",
+    "repeat": "Ripeti",
+    "back_to_lesson": "Torna alla lezione"
   },
   "ranking": {
     "title": "Ranking e Achievement",
@@ -201,6 +242,12 @@
     "save": "Salva",
     "delete": "Elimina",
     "edit": "Modifica",
+    "view": "Visualizza",
+    "about_to_delete": "Stai per eliminare:",
+    "irreversible_confirm": "Capisco che questa azione è irreversibile",
+    "difficulty_easy": "Facile",
+    "difficulty_medium": "Media",
+    "difficulty_hard": "Difficile",
     "too_many_requests": "Troppi tentativi. Riprova tra 15 minuti."
   }
 }

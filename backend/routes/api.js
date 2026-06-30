@@ -118,13 +118,15 @@ router.get('/subjects/:id', verifyToken, async (req, res) => {
 
 // ── Lessons ───────────────────────────────────────────────────────────────
 
-// GET /api/subjects/:id/lessons — lezioni di una materia con conteggio flashcard
+// GET /api/subjects/:id/lessons — lezioni con conteggio flashcard e progresso
 router.get('/subjects/:id/lessons', async (req, res) => {
   try {
     const [rows] = await db.query(`
       SELECT l.id, l.name, l.description, l.subject_id,
              l.status, l.last_study, l.last_lesson_duration, l.created_at,
-             COUNT(fl.flashcard_id) AS flashcardCount
+             COUNT(fl.flashcard_id)                                          AS flashcardCount,
+             SUM(fl.status = 'mastered')                                     AS mastered_count,
+             SUM(fl.status IN ('review', 'learning'))                         AS review_count
       FROM lessons l
       LEFT JOIN flashcard_lesson fl ON fl.lesson_id = l.id
       WHERE l.subject_id = ?
@@ -152,6 +154,25 @@ router.post('/subjects/:id/lessons', async (req, res) => {
   } catch (err) {
     console.error('POST /api/subjects/:id/lessons:', err);
     res.status(500).json({ error: 'Errore nella creazione della lezione' });
+  }
+});
+
+// PATCH /api/lessons/:id — aggiorna status/last_study/last_lesson_duration dopo una sessione
+router.patch('/lessons/:id', async (req, res) => {
+  try {
+    const { status, last_study, last_lesson_duration } = req.body;
+    await db.query(
+      `UPDATE lessons SET
+         status = COALESCE(?, status),
+         last_study = COALESCE(?, last_study),
+         last_lesson_duration = COALESCE(?, last_lesson_duration)
+       WHERE id = ?`,
+      [status ?? null, last_study ?? null, last_lesson_duration ?? null, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('PATCH /api/lessons/:id:', err);
+    res.status(500).json({ error: "Errore nell'aggiornamento della lezione" });
   }
 });
 
@@ -194,18 +215,23 @@ router.delete('/lessons/:id', async (req, res) => {
 router.get('/lessons/:id/flashcards', async (req, res) => {
   try {
     const [rows] = await db.query(`
-      SELECT f.id, f.content, f.difficult, f.created_at
+      SELECT f.id, f.content, f.difficult, f.created_at, fl.status
       FROM flashcard f
       JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
       WHERE fl.lesson_id = ?
       ORDER BY f.created_at ASC
     `, [req.params.id]);
-    // Spacchetta il JSON content in campi diretti per comodità del frontend
-    const parsed = rows.map(r => ({
-      ...r,
-      question: r.content?.question ?? '',
-      answer:   r.content?.answer   ?? '',
-    }));
+    // mysql2 restituisce le colonne JSON come stringa grezza → va parsata
+    const parsed = rows.map(r => {
+      const c = typeof r.content === 'string' ? JSON.parse(r.content) : (r.content ?? {});
+      return {
+        ...r,
+        content:  c,
+        question: c.question ?? '',
+        answer:   c.answer   ?? '',
+        status:   r.status ?? 'learning',
+      };
+    });
     res.json(parsed);
   } catch (err) {
     console.error('GET /api/lessons/:id/flashcards:', err);
@@ -239,6 +265,72 @@ router.post('/lessons/:id/flashcards', async (req, res) => {
   } catch (err) {
     console.error('POST /api/lessons/:id/flashcards:', err);
     res.status(500).json({ error: 'Errore nella creazione della flashcard' });
+  }
+});
+
+// ── Sessioni ──────────────────────────────────────────────────────────────
+
+// POST /api/sessions — salva i risultati di una sessione e aggiorna lo status per card
+// Body: { subjectId, lessonId, duration, results: [{cardId, rating}] }
+router.post('/sessions', async (req, res) => {
+  try {
+    const { subjectId, lessonId, duration = 0, results = [] } = req.body;
+    if (!subjectId || !lessonId) return res.status(400).json({ error: 'subjectId e lessonId obbligatori' });
+
+    const knew   = results.filter(r => r.rating === 'knew').length;
+    const almost = results.filter(r => r.rating === 'almost').length;
+    const forgot = results.filter(r => r.rating === 'forgot').length;
+    const completed = results.length > 0 && forgot === 0 ? 1 : 0;
+
+    const resultJson = JSON.stringify({ knew, almost, forgot, cards: results });
+
+    // user_id = 1 placeholder fino all'implementazione dell'autenticazione
+    const [row] = await db.query(
+      `INSERT INTO sessioni (user_id, subject_id, lesson_id, result, last_usage_date, session_duration, completed)
+       VALUES (1, ?, ?, ?, NOW(), ?, ?)`,
+      [subjectId, lessonId, resultJson, duration, completed]
+    );
+
+    // Aggiorna lo status per ogni card in flashcard_lesson
+    if (results.length > 0) {
+      const statusMap = { knew: 'mastered', almost: 'learning', forgot: 'review' };
+      await Promise.all(results.map(r =>
+        db.query(
+          'UPDATE flashcard_lesson SET status = ? WHERE flashcard_id = ? AND lesson_id = ?',
+          [statusMap[r.rating] ?? 'learning', r.cardId, lessonId]
+        )
+      ));
+    }
+
+    res.status(201).json({ id: row.insertId, knew, almost, forgot, completed });
+  } catch (err) {
+    console.error('POST /api/sessions:', err);
+    res.status(500).json({ error: 'Errore nel salvataggio della sessione' });
+  }
+});
+
+// PUT /api/flashcards/:id — modifica domanda, risposta e difficoltà di una flashcard
+router.put('/flashcards/:id', async (req, res) => {
+  try {
+    const { question, answer, difficult } = req.body;
+    if (!question?.trim() || !answer?.trim()) {
+      return res.status(400).json({ error: 'Domanda e risposta sono obbligatorie' });
+    }
+    const content = JSON.stringify({ question: question.trim(), answer: answer.trim() });
+    const [result] = await db.query(
+      'UPDATE flashcard SET content = ?, difficult = ? WHERE id = ?',
+      [content, difficult ?? 1, req.params.id]
+    );
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'Flashcard non trovata' });
+    res.json({
+      id: Number(req.params.id),
+      question: question.trim(),
+      answer: answer.trim(),
+      difficult: difficult ?? 1,
+    });
+  } catch (err) {
+    console.error('PUT /api/flashcards/:id:', err);
+    res.status(500).json({ error: 'Errore nella modifica della flashcard' });
   }
 });
 

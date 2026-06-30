@@ -66,10 +66,17 @@
   "subject": {
     "back": "Back",
     "study_now": "Study Now",
+    "study": "Study",
     "add_lesson": "Add Lesson",
     "add_flashcard": "Flashcard",
-    "lessons_count": "lessons",
+    "lessons_count": "Lessons",
+    "total_flashcards": "Total flashcards",
+    "mastered_percent": "Mastered",
+    "create_first_lesson": "Create first lesson",
     "cards_count": "flashcards",
+    "chip_cards": "cards",
+    "chip_mastered": "mastered",
+    "chip_review": "to review",
     "no_lessons": "No lessons yet. Create one to get started!",
     "no_flashcards": "No flashcards in this lesson yet. Add one!",
     "start_lesson": "Start lesson",
@@ -94,6 +101,40 @@
       "difficulty_label": "Difficulty",
       "submit": "Add"
     }
+  },
+  "lesson": {
+    "total_cards": "Total cards",
+    "mastered": "Mastered",
+    "to_review": "To review",
+    "progress": "Progress",
+    "mastered_pct": "{{pct}}% mastered",
+    "search_placeholder": "Search flashcards...",
+    "filter_all": "All",
+    "filter_mastered": "Mastered",
+    "filter_learning": "Studying",
+    "filter_review": "To Review",
+    "status_mastered": "Mastered",
+    "status_learning": "Studying",
+    "status_review": "To review"
+  },
+  "study": {
+    "question": "Question",
+    "answer": "Answer",
+    "click_to_reveal": "Click to reveal the answer",
+    "show_answer": "Show answer",
+    "knew": "I knew it!",
+    "almost": "Almost...",
+    "forgot": "I didn't know",
+    "knew_short": "Knew",
+    "almost_short": "Almost",
+    "forgot_short": "Didn't know",
+    "correct": "correct",
+    "result_great": "Great job! 🎉",
+    "result_good": "Good session 💪",
+    "result_keep_going": "Keep studying 📚",
+    "cards_studied": "cards studied",
+    "repeat": "Repeat",
+    "back_to_lesson": "Back to lesson"
   },
   "ranking": {
     "title": "Ranking & Achievements",
@@ -201,6 +242,12 @@
     "save": "Save",
     "delete": "Delete",
     "edit": "Edit",
+    "view": "View",
+    "about_to_delete": "You are about to delete:",
+    "irreversible_confirm": "I understand this action cannot be undone",
+    "difficulty_easy": "Easy",
+    "difficulty_medium": "Medium",
+    "difficulty_hard": "Hard",
     "too_many_requests": "Too many attempts. Please try again in 15 minutes."
   }
 }

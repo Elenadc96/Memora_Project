@@ -30,6 +30,14 @@ interface DeleteFlashcardPayload {
   lessonId: number
 }
 
+interface UpdateFlashcardPayload {
+  flashcardId: number
+  lessonId: number
+  question: string
+  answer: string
+  difficult: number
+}
+
 export const useFlashcardStore = defineStore('flashcards', {
   state: (): FlashcardState => ({
     subjects: [],
@@ -148,6 +156,25 @@ export const useFlashcardStore = defineStore('flashcards', {
       return data
     },
 
+    async updateLessonStatus(lessonId: number, payload: { status: 0 | 1 | 2; last_study: string; last_lesson_duration: number }): Promise<void> {
+      await axios.patch(`/api/lessons/${lessonId}`, payload)
+      const lesson = this.lessons.find(l => l.id === lessonId)
+      if (lesson) {
+        lesson.status = payload.status
+        lesson.last_study = payload.last_study
+        lesson.last_lesson_duration = payload.last_lesson_duration
+      }
+    },
+
+    async saveSession(payload: {
+      subjectId: number
+      lessonId: number
+      duration: number
+      results: { cardId: string; rating: 'knew' | 'almost' | 'forgot' }[]
+    }): Promise<void> {
+      await axios.post('/api/sessions', payload)
+    },
+
     async deleteLesson(lessonId: number): Promise<void> {
       const lesson = this.lessons.find((l) => l.id === lessonId)
       await axios.delete(`/api/lessons/${lessonId}`)
@@ -174,6 +201,18 @@ export const useFlashcardStore = defineStore('flashcards', {
       this._incrementLessonCount(lessonId)
       if (this.selectedSubjectId) await this._refreshSubjectCardCount(this.selectedSubjectId)
       return data
+    },
+
+    async updateFlashcard({ flashcardId, lessonId, question, answer, difficult }: UpdateFlashcardPayload): Promise<void> {
+      await axios.put(`/api/flashcards/${flashcardId}`, { question, answer, difficult })
+      if (this.flashcardsByLesson[lessonId]) {
+        this.flashcardsByLesson = {
+          ...this.flashcardsByLesson,
+          [lessonId]: this.flashcardsByLesson[lessonId].map((f) =>
+            f.id === flashcardId ? { ...f, question, answer, difficult } : f,
+          ),
+        }
+      }
     },
 
     async deleteFlashcard({ flashcardId, lessonId }: DeleteFlashcardPayload): Promise<void> {

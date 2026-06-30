@@ -93,6 +93,7 @@ CREATE TABLE flashcard (
 CREATE TABLE flashcard_lesson (
     flashcard_id INT NOT NULL,
     lesson_id INT NOT NULL,
+    status ENUM('learning', 'mastered', 'review') DEFAULT 'learning',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY (flashcard_id, lesson_id),
@@ -118,6 +119,7 @@ CREATE TABLE sessioni (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     subject_id INT NOT NULL,
+    lesson_id INT NULL,
     result JSON DEFAULT NULL,
     last_usage_date TIMESTAMP NULL,
     session_duration INT DEFAULT 0,
@@ -126,6 +128,7 @@ CREATE TABLE sessioni (
 
     INDEX idx_sessioni_user_id (user_id),
     INDEX idx_sessioni_subject_id (subject_id),
+    INDEX idx_sessioni_lesson_id (lesson_id),
 
     CONSTRAINT fk_sessioni_user
         FOREIGN KEY (user_id) REFERENCES utenti(id)
@@ -135,6 +138,11 @@ CREATE TABLE sessioni (
     CONSTRAINT fk_sessioni_subject
         FOREIGN KEY (subject_id) REFERENCES subject(id)
         ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_sessioni_lesson
+        FOREIGN KEY (lesson_id) REFERENCES lessons(id)
+        ON DELETE SET NULL
         ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
