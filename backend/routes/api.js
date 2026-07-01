@@ -2,6 +2,7 @@ const express     = require('express');
 const router      = express.Router();
 const db          = require('../config/db');
 const verifyToken = require('../middleware/auth');
+const { recordSessionCompletion } = require('../services/gamificationService');
 
 // ── Health check ──────────────────────────────────────────────────────────
 router.get('/status', async (req, res) => {
@@ -271,42 +272,116 @@ router.post('/lessons/:id/flashcards', async (req, res) => {
 
 // ── Sessioni ──────────────────────────────────────────────────────────────
 
-// POST /api/sessions — salva i risultati di una sessione e aggiorna lo status per card
+// POST /api/sessions — salva i risultati di una sessione, aggiorna lo status
+// per card e i contatori di gamification (streak/punti/badge) dell'utente
 // Body: { subjectId, lessonId, duration, results: [{cardId, rating}] }
-router.post('/sessions', async (req, res) => {
+//
+// TRANSAZIONE: questo endpoint fa 4 scritture diverse sul database (sessione,
+// stato delle flashcard, punti/streak, badge). Sono scritture "collegate":
+// dal punto di vista dell'utente sono un unico gesto ("ho finito di
+// studiare"), quindi devono comportarsi come un'unica operazione indivisibile
+// — o vanno a buon fine TUTTE, o non ne va a buon fine NESSUNA. Senza questa
+// garanzia, se ad esempio la scrittura dei badge fallisse per un problema
+// imprevisto, la sessione e lo stato delle flashcard resterebbero comunque
+// salvati mentre l'utente riceverebbe un errore: un disallineamento
+// silenzioso tra "cosa è stato salvato davvero" e "cosa l'utente crede sia
+// stato salvato" (l'utente vedrebbe un errore e magari riproverebbe,
+// duplicando la sessione).
+//
+// Per ottenere questa garanzia si usa una transazione SQL:
+// 1. si prende "in prestito" UNA connessione dedicata dal pool di database
+//    (invece di lasciare che ogni query prenda una connessione diversa, come
+//    succede normalmente con `db.query`);
+// 2. si dice al database "da qui in poi, tieni in sospeso tutto quello che
+//    scrivo" (beginTransaction);
+// 3. se TUTTO va a buon fine, si dice "conferma, rendi definitivo tutto
+//    quello che ho scritto" (commit);
+// 4. se QUALSIASI cosa lancia un errore lungo il percorso, si dice "annulla,
+//    fai finta che non sia successo nulla" (rollback) — riportando il
+//    database esattamente allo stato precedente alla richiesta;
+// 5. in ogni caso (successo o errore) si restituisce la connessione presa in
+//    prestito al pool, così può essere riutilizzata da altre richieste
+//    (`finally` → `release`).
+router.post('/sessions', verifyToken, async (req, res) => {
+  const userId = req.user.id;
+  const { subjectId, lessonId, duration = 0, results = [] } = req.body;
+  if (!subjectId || !lessonId) return res.status(400).json({ error: 'subjectId e lessonId obbligatori' });
+
+  const knew   = results.filter(r => r.rating === 'knew').length;
+  const almost = results.filter(r => r.rating === 'almost').length;
+  const forgot = results.filter(r => r.rating === 'forgot').length;
+  const completed = results.length > 0 && forgot === 0 ? 1 : 0;
+  const resultJson = JSON.stringify({ knew, almost, forgot, cards: results });
+
+  const conn = await db.getConnection();
   try {
-    const { subjectId, lessonId, duration = 0, results = [] } = req.body;
-    if (!subjectId || !lessonId) return res.status(400).json({ error: 'subjectId e lessonId obbligatori' });
+    await conn.beginTransaction();
 
-    const knew   = results.filter(r => r.rating === 'knew').length;
-    const almost = results.filter(r => r.rating === 'almost').length;
-    const forgot = results.filter(r => r.rating === 'forgot').length;
-    const completed = results.length > 0 && forgot === 0 ? 1 : 0;
-
-    const resultJson = JSON.stringify({ knew, almost, forgot, cards: results });
-
-    // user_id = 1 placeholder fino all'implementazione dell'autenticazione
-    const [row] = await db.query(
+    const [row] = await conn.query(
       `INSERT INTO sessioni (user_id, subject_id, lesson_id, result, last_usage_date, session_duration, completed)
-       VALUES (1, ?, ?, ?, NOW(), ?, ?)`,
-      [subjectId, lessonId, resultJson, duration, completed]
+       VALUES (?, ?, ?, ?, NOW(), ?, ?)`,
+      [userId, subjectId, lessonId, resultJson, duration, completed]
     );
 
-    // Aggiorna lo status per ogni card in flashcard_lesson
+    // Aggiorna lo status per ogni card in flashcard_lesson.
+    // Eseguite in sequenza (non con Promise.all) perché condividono la
+    // stessa connessione `conn`: una connessione MySQL esegue un comando
+    // alla volta, quindi lanciarle "in parallelo" non le farebbe girare più
+    // velocemente, andrebbero comunque in coda una dietro l'altra.
     if (results.length > 0) {
       const statusMap = { knew: 'mastered', almost: 'learning', forgot: 'review' };
-      await Promise.all(results.map(r =>
-        db.query(
+      for (const r of results) {
+        await conn.query(
           'UPDATE flashcard_lesson SET status = ? WHERE flashcard_id = ? AND lesson_id = ?',
           [statusMap[r.rating] ?? 'learning', r.cardId, lessonId]
-        )
-      ));
+        );
+      }
+
+      // duration arriva in secondi da StudySession.vue (elapsed incrementato ogni 1000ms)
+      await recordSessionCompletion(conn, userId, { cardsInSession: results.length, knew, durationSeconds: duration });
     }
 
+    await conn.commit();
     res.status(201).json({ id: row.insertId, knew, almost, forgot, completed });
   } catch (err) {
+    await conn.rollback();
     console.error('POST /api/sessions:', err);
     res.status(500).json({ error: 'Errore nel salvataggio della sessione' });
+  } finally {
+    conn.release();
+  }
+});
+
+// ── Ranking ───────────────────────────────────────────────────────────────
+
+// GET /api/ranking — classifica globale ordinata per punti totali (top 50)
+// A parità di punti vince chi è stato attivo più di recente (last_streak_date);
+// u.id resta come ultimo spareggio deterministico se anche quella coincide.
+router.get('/ranking', verifyToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT u.id AS userId, u.name, u.lastName,
+             COALESCE(p.total_point, 0) AS points,
+             COALESCE(p.streak_days, 0) AS streak
+      FROM utenti u
+      JOIN points p ON p.user_id = u.id
+      ORDER BY p.total_point DESC, p.last_streak_date DESC, u.id ASC
+      LIMIT 50
+    `);
+
+    const ranking = rows.map((r, i) => ({
+      rank: i + 1,
+      userId: r.userId,
+      name: `${r.name} ${r.lastName}`,
+      points: Number(r.points),
+      streak: Number(r.streak),
+      isCurrentUser: r.userId === req.user.id,
+    }));
+
+    res.json(ranking);
+  } catch (err) {
+    console.error('GET /api/ranking:', err);
+    res.status(500).json({ error: 'Errore nel recupero della classifica' });
   }
 });
 
@@ -417,16 +492,34 @@ router.get('/dashboard', verifyToken, async (req, res) => {
     `, [userId]);
 
     // Costruisce array 7 giorni riempiendo i buchi con 0
+    //
+    // NOTA sul confronto delle date: qui NON si può usare toISOString() per
+    // trasformare una data in stringa "YYYY-MM-DD", perché toISOString()
+    // converte sempre in UTC. mysql2 restituisce le colonne DATE (come
+    // `day` qui sotto) come oggetti Date che rappresentano la MEZZANOTTE
+    // LOCALE di quel giorno — e con un fuso avanti rispetto a UTC (es.
+    // Europe/Berlin, +2h d'estate), la mezzanotte locale corrisponde alle
+    // 22:00 del giorno UTC precedente. toISOString() la riporterebbe quindi
+    // al giorno prima, facendo "scivolare indietro" ogni sessione di un
+    // giorno rispetto a "oggi" (calcolato invece con l'orario locale reale,
+    // non di mezzanotte, che raramente attraversa quel confine). Per questo
+    // si leggono sempre i componenti locali della data (getFullYear/
+    // getMonth/getDate), mai la rappresentazione UTC.
+    const toLocalDateStr = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
     const weeklyActivity = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const dateStr = toLocalDateStr(d);
       const found = weekRows.find(r => {
-        const rDate = r.day instanceof Date
-          ? r.day.toISOString().slice(0, 10)
-          : String(r.day).slice(0, 10);
+        const rDate = r.day instanceof Date ? toLocalDateStr(r.day) : String(r.day).slice(0, 10);
         return rDate === dateStr;
       });
       weeklyActivity.push({

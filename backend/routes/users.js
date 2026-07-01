@@ -3,12 +3,18 @@ const router   = express.Router();
 const bcrypt   = require('bcrypt');
 const jwt      = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 const db       = require('../config/db');
 
+// v8 di express-rate-limit valida i keyGenerator custom: se possono ricadere
+// su req.ip, l'IP va normalizzato con l'helper ipKeyGenerator (gestisce
+// correttamente gli indirizzi IPv6, che altrimenti permetterebbero di
+// aggirare il limite usando rappresentazioni diverse dello stesso indirizzo).
+// Qui la ricaduta su IP scatta solo se req.user non è ancora popolato.
 const passwordChangeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  keyGenerator: (req) => String(req.user?.id || req.ip),
+  keyGenerator: (req) => (req.user?.id ? String(req.user.id) : ipKeyGenerator(req.ip)),
   handler: (_req, res) => res.status(429).json({ error: 'Troppi tentativi. Riprova tra 15 minuti.' }),
   standardHeaders: true,
   legacyHeaders: false,

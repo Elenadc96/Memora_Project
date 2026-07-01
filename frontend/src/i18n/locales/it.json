@@ -152,6 +152,7 @@
     "streak_days": "{{count}} giorni",
     "streak_motivation": "Il tuo Streak: {{count}} giorni 🔥",
     "streak_hint": "Continua così! Ancora {{remaining}} giorni per sbloccare il badge \"{{badge}}\"",
+    "streak_hint_done": "Hai sbloccato il badge \"{{badge}}\"! 🎉",
     "unlocked_on": "Sbloccato {{date}}",
     "you_label": "Tu",
     "points_label": "{{count}} punti",

@@ -25,6 +25,10 @@ router.post('/register', async (req, res) => {
         const sql = 'INSERT INTO utenti (email, password_hash, name, lastName, settings) VALUES (?, ?, ?, ?, ?)';
         const [result] = await db.query(sql, [email, hashedPassword, name, lastName, JSON.stringify(initialSettings)]);
 
+        // Riga punti/streak per il ranking, così il nuovo utente compare
+        // subito in classifica (con 0 punti) invece di esserne escluso.
+        await db.query('INSERT INTO points (user_id) VALUES (?)', [result.insertId]);
+
         // Creazione Token JWT [3, 4]
         const token = jwt.sign({ id: result.insertId, email }, process.env.JWT_SECRET, { expiresIn: '2h' });
 

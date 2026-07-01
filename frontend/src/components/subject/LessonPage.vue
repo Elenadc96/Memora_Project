@@ -248,20 +248,27 @@ function onSessionComplete(results: { cardId: string; rating: 'knew' | 'almost' 
   const knewCount = results.filter(r => r.rating === 'knew').length
   const newStatus: 0 | 1 | 2 = knewCount === results.length ? 2 : 1
 
-  // Salva la sessione sul backend
+  // Salva la sessione sul backend. Il salvataggio è transazionale lato server
+  // (sessione + stato flashcard + punti/streak + badge sono un unico blocco):
+  // se questa chiamata fallisce, NULLA di tutto ciò è stato salvato, quindi
+  // l'utente va avvisato invece di far finta che sia andato tutto bene.
   store.saveSession({
     subjectId: props.lesson.subject_id,
     lessonId:  props.lesson.id,
     duration,
     results,
-  }).catch(() => { /* non critico */ })
+  }).catch(() => {
+    toast.error('Impossibile salvare la sessione. Punti, streak e badge non sono stati aggiornati.')
+  })
 
   // Aggiorna lo status della lezione
   store.updateLessonStatus(props.lesson.id, {
     status: newStatus,
     last_study: new Date().toISOString(),
     last_lesson_duration: duration,
-  }).catch(() => { /* non critico */ })
+  }).catch(() => {
+    toast.error('Impossibile aggiornare lo stato della lezione. Riprova più tardi.')
+  })
 }
 
 async function deleteFlashcard(id: string) {
