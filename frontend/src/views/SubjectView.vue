@@ -396,8 +396,29 @@ async function confirmDeleteSubject() {
 }
 
 // ── Lifecycle ────────────────────────────────────────────────────────────
+// Carica prima la lista materie dell'utente (se non già in memoria) e verifica
+// che l'id richiesto sia davvero una delle sue materie, PRIMA di chiedere le
+// lezioni. Senza questo controllo, un id che non è dell'utente (es. digitato
+// a mano nell'URL, o non ancora tuo perché la sidebar non ha ancora fetchato
+// la lista) fa restare `subject` per sempre null: il titolo mostra il
+// fallback "Caricamento..." a vita perché non c'è nessun altro punto che
+// riprovi o segnali l'errore. Ora invece, se la materia non è nella lista,
+// si avvisa l'utente e si torna alla dashboard invece di restare bloccati.
+async function loadSubject(id: number) {
+  if (!store.subjects.length) {
+    await store.fetchSubjects()
+  }
+  const exists = store.subjects.some((s) => s.id === id)
+  if (!exists) {
+    toast.error('Materia non trovata.')
+    router.replace('/dashboard')
+    return
+  }
+  store.selectSubject(id)
+}
+
 onMounted(() => {
-  store.selectSubject(subjectId.value)
+  loadSubject(subjectId.value)
 })
 
 // Quando le lezioni finiscono di caricarsi e il lessonId non esiste → torna alla lista
@@ -411,6 +432,6 @@ watch(
 )
 
 watch(subjectId, (newId) => {
-  store.selectSubject(newId)
+  loadSubject(newId)
 })
 </script>

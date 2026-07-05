@@ -11,9 +11,13 @@ const app = express();
 require('./config/db');
 
 // CONFIGURAZIONE CORS
-app.use(cors({ 
-  origin: 'http://localhost:8080', 
-  credentials: true // Permette lo scambio di cookie tra frontend e backend 
+// L'origine è configurabile via env perché la porta del frontend cambia se 8080
+// è già occupata (vue-cli-service passa automaticamente alla porta libera
+// successiva, es. 8081/8082) — con l'origin hardcoded le richieste dirette
+// (non passate dal proxy di vue-cli-service) verrebbero bloccate dal browser.
+app.use(cors({
+  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:8080',
+  credentials: true // Permette lo scambio di cookie tra frontend e backend
 }));
 
 

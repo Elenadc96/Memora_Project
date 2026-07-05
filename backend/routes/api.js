@@ -119,10 +119,27 @@ router.get('/subjects/:id', verifyToken, async (req, res) => {
 });
 
 // ── Lessons ───────────────────────────────────────────────────────────────
+//
+// Le lezioni non hanno un proprio user_id: appartengono a una subject, che a
+// sua volta appartiene a un utente (utenti → subject → lessons → flashcard).
+// Per questo ogni rotta qui sotto è protetta da verifyToken E fa sempre un
+// controllo di ownership che risale la catena fino a subject.user_id, prima
+// di leggere/scrivere qualunque cosa — altrimenti chiunque autenticato (o,
+// se manca pure verifyToken, chiunque punto) potrebbe leggere/modificare/
+// cancellare le lezioni e le flashcard di un altro utente semplicemente
+// indovinando un id numerico (IDOR). Quando il controllo fallisce si
+// risponde 404 "non trovata" invece di 403 "non tua", per non confermare a
+// un estraneo che quell'id esiste ma appartiene a qualcun altro.
 
 // GET /api/subjects/:id/lessons — lezioni con conteggio flashcard e progresso
-router.get('/subjects/:id/lessons', async (req, res) => {
+router.get('/subjects/:id/lessons', verifyToken, async (req, res) => {
   try {
+    const [subjectRows] = await db.query(
+      'SELECT id FROM subject WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+    if (!subjectRows.length) return res.status(404).json({ error: 'Materia non trovata' });
+
     const [rows] = await db.query(`
       SELECT l.id, l.name, l.description, l.subject_id,
              l.status, l.last_study, l.last_lesson_duration, l.created_at,
@@ -143,8 +160,14 @@ router.get('/subjects/:id/lessons', async (req, res) => {
 });
 
 // POST /api/subjects/:id/lessons — crea nuova lezione
-router.post('/subjects/:id/lessons', async (req, res) => {
+router.post('/subjects/:id/lessons', verifyToken, async (req, res) => {
   try {
+    const [subjectRows] = await db.query(
+      'SELECT id FROM subject WHERE id = ? AND user_id = ?',
+      [req.params.id, req.user.id]
+    );
+    if (!subjectRows.length) return res.status(404).json({ error: 'Materia non trovata' });
+
     const { name, description } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: 'Il nome della lezione è obbligatorio' });
     const [result] = await db.query(
@@ -160,8 +183,17 @@ router.post('/subjects/:id/lessons', async (req, res) => {
 });
 
 // PATCH /api/lessons/:id — aggiorna status/last_study/last_lesson_duration dopo una sessione
-router.patch('/lessons/:id', async (req, res) => {
+router.patch('/lessons/:id', verifyToken, async (req, res) => {
   try {
+    // Risale da lesson a subject per verificare che la lezione sia dell'utente loggato
+    const [own] = await db.query(
+      `SELECT l.id FROM lessons l
+       JOIN subject s ON s.id = l.subject_id
+       WHERE l.id = ? AND s.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+
     const { status, last_study, last_lesson_duration } = req.body;
     await db.query(
       `UPDATE lessons SET
@@ -186,8 +218,16 @@ router.patch('/lessons/:id', async (req, res) => {
 // 1. Si recuperano gli id delle flashcard legate a questa lezione
 // 2. Si cancella la lezione (il CASCADE pulisce flashcard_lesson)
 // 3. Si cancellano le flashcard orfane con quei id
-router.delete('/lessons/:id', async (req, res) => {
+router.delete('/lessons/:id', verifyToken, async (req, res) => {
   try {
+    const [own] = await db.query(
+      `SELECT l.id FROM lessons l
+       JOIN subject s ON s.id = l.subject_id
+       WHERE l.id = ? AND s.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+
     // 1. Trova le flashcard della lezione prima che il CASCADE le scolleghi
     const [fcRows] = await db.query(
       'SELECT flashcard_id FROM flashcard_lesson WHERE lesson_id = ?',
@@ -211,11 +251,23 @@ router.delete('/lessons/:id', async (req, res) => {
 });
 
 // ── Flashcards ────────────────────────────────────────────────────────────
+//
+// Stessa logica delle lezioni: una flashcard non ha user_id proprio, quindi
+// l'ownership si verifica risalendo flashcard → flashcard_lesson → lessons →
+// subject.user_id.
 
 // GET /api/lessons/:id/flashcards — flashcard di una lezione
 // Il campo content (JSON) viene spacchettato in question/answer per il frontend
-router.get('/lessons/:id/flashcards', async (req, res) => {
+router.get('/lessons/:id/flashcards', verifyToken, async (req, res) => {
   try {
+    const [own] = await db.query(
+      `SELECT l.id FROM lessons l
+       JOIN subject s ON s.id = l.subject_id
+       WHERE l.id = ? AND s.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+
     const [rows] = await db.query(`
       SELECT f.id, f.content, f.difficult, f.created_at, fl.status
       FROM flashcard f
@@ -242,8 +294,16 @@ router.get('/lessons/:id/flashcards', async (req, res) => {
 });
 
 // POST /api/lessons/:id/flashcards — crea flashcard in una lezione
-router.post('/lessons/:id/flashcards', async (req, res) => {
+router.post('/lessons/:id/flashcards', verifyToken, async (req, res) => {
   try {
+    const [own] = await db.query(
+      `SELECT l.id FROM lessons l
+       JOIN subject s ON s.id = l.subject_id
+       WHERE l.id = ? AND s.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+
     const { question, answer, difficult = 0 } = req.body;
     if (!question?.trim() || !answer?.trim()) {
       return res.status(400).json({ error: 'Domanda e risposta sono obbligatorie' });
@@ -306,6 +366,17 @@ router.post('/sessions', verifyToken, async (req, res) => {
   const userId = req.user.id;
   const { subjectId, lessonId, duration = 0, results = [] } = req.body;
   if (!subjectId || !lessonId) return res.status(400).json({ error: 'subjectId e lessonId obbligatori' });
+
+  // subjectId/lessonId arrivano dal body: senza questo controllo un utente
+  // potrebbe salvare una sessione (e far scattare punti/streak/badge) su una
+  // lezione di un altro utente semplicemente inviando il suo id numerico.
+  const [own] = await db.query(
+    `SELECT l.id FROM lessons l
+     JOIN subject s ON s.id = l.subject_id
+     WHERE l.id = ? AND l.subject_id = ? AND s.user_id = ?`,
+    [lessonId, subjectId, userId]
+  );
+  if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
 
   const knew   = results.filter(r => r.rating === 'knew').length;
   const almost = results.filter(r => r.rating === 'almost').length;
@@ -386,18 +457,30 @@ router.get('/ranking', verifyToken, async (req, res) => {
 });
 
 // PUT /api/flashcards/:id — modifica domanda, risposta e difficoltà di una flashcard
-router.put('/flashcards/:id', async (req, res) => {
+router.put('/flashcards/:id', verifyToken, async (req, res) => {
   try {
+    // Una flashcard non ha subject_id/user_id diretto: l'ownership si
+    // verifica risalendo alla lezione (via flashcard_lesson) e da lì alla
+    // materia dell'utente loggato.
+    const [own] = await db.query(
+      `SELECT f.id FROM flashcard f
+       JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
+       JOIN lessons l           ON l.id = fl.lesson_id
+       JOIN subject s           ON s.id = l.subject_id
+       WHERE f.id = ? AND s.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (!own.length) return res.status(404).json({ error: 'Flashcard non trovata' });
+
     const { question, answer, difficult } = req.body;
     if (!question?.trim() || !answer?.trim()) {
       return res.status(400).json({ error: 'Domanda e risposta sono obbligatorie' });
     }
     const content = JSON.stringify({ question: question.trim(), answer: answer.trim() });
-    const [result] = await db.query(
+    await db.query(
       'UPDATE flashcard SET content = ?, difficult = ? WHERE id = ?',
       [content, difficult ?? 1, req.params.id]
     );
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Flashcard non trovata' });
     res.json({
       id: Number(req.params.id),
       question: question.trim(),
@@ -411,8 +494,18 @@ router.put('/flashcards/:id', async (req, res) => {
 });
 
 // DELETE /api/flashcards/:id — elimina flashcard
-router.delete('/flashcards/:id', async (req, res) => {
+router.delete('/flashcards/:id', verifyToken, async (req, res) => {
   try {
+    const [own] = await db.query(
+      `SELECT f.id FROM flashcard f
+       JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
+       JOIN lessons l           ON l.id = fl.lesson_id
+       JOIN subject s           ON s.id = l.subject_id
+       WHERE f.id = ? AND s.user_id = ?`,
+      [req.params.id, req.user.id]
+    );
+    if (!own.length) return res.status(404).json({ error: 'Flashcard non trovata' });
+
     await db.query('DELETE FROM flashcard WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
