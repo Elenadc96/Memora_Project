@@ -47,6 +47,7 @@
 import { defineComponent } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import Swal from 'sweetalert2'
+import { apiErrorMessage } from '@/utils/notify'
 
 export default defineComponent({
   name: 'LoginView',
@@ -64,8 +65,7 @@ export default defineComponent({
         await this.authStore.login({ email: this.form.email, password: this.form.password })
         this.$router.push('/dashboard')
       } catch (error: any) {
-        const message = error.response?.data?.error || this.$t('common.error')
-        Swal.fire({ icon: 'error', title: 'Errore', text: message })
+        Swal.fire({ icon: 'error', title: 'Errore', text: apiErrorMessage(error) })
       }
     },
   },

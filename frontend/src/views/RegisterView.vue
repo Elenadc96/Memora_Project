@@ -63,6 +63,7 @@
 import { defineComponent } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
+import { apiErrorMessage } from '@/utils/notify'
 
 export default defineComponent({
   name: 'RegisterView',
@@ -96,8 +97,7 @@ export default defineComponent({
 
         this.$router.push('/login')
       } catch (error: any) {
-        const message = error.response?.data?.error || this.$t('common.error')
-        Swal.fire({ icon: 'error', title: 'Errore', text: message })
+        Swal.fire({ icon: 'error', title: 'Errore', text: apiErrorMessage(error) })
       }
     },
   },

@@ -250,5 +250,27 @@
     "difficulty_medium": "Media",
     "difficulty_hard": "Difficile",
     "too_many_requests": "Troppi tentativi. Riprova tra 15 minuti."
+  },
+  "errors": {
+    "AUTH_REQUIRED": "Devi effettuare il login.",
+    "AUTH_INVALID_TOKEN": "Sessione non valida o scaduta.",
+    "INVALID_CREDENTIALS": "Email o password non corretti.",
+    "EMAIL_ALREADY_REGISTERED": "Questa email è già registrata.",
+    "USER_NOT_FOUND": "Utente non trovato.",
+    "NAME_REQUIRED": "Il nome non può essere vuoto.",
+    "LASTNAME_REQUIRED": "Il cognome non può essere vuoto.",
+    "NO_DATA_TO_UPDATE": "Nessun dato da aggiornare.",
+    "PASSWORD_FIELDS_REQUIRED": "Password attuale e nuova password sono obbligatorie.",
+    "PASSWORD_TOO_SHORT": "La nuova password deve avere almeno 8 caratteri.",
+    "PASSWORD_WRONG_CURRENT": "Password attuale non corretta.",
+    "TOO_MANY_REQUESTS": "Troppi tentativi. Riprova tra 15 minuti.",
+    "SUBJECT_NAME_REQUIRED": "Il nome della materia è obbligatorio.",
+    "SUBJECT_NOT_FOUND": "Materia non trovata.",
+    "LESSON_NAME_REQUIRED": "Il nome della lezione è obbligatorio.",
+    "LESSON_NOT_FOUND": "Lezione non trovata.",
+    "FLASHCARD_QUESTION_ANSWER_REQUIRED": "Domanda e risposta sono obbligatorie.",
+    "FLASHCARD_NOT_FOUND": "Flashcard non trovata.",
+    "SESSION_FIELDS_REQUIRED": "subjectId e lessonId sono obbligatori.",
+    "SERVER_ERROR": "Si è verificato un errore."
   }
 }

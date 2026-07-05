@@ -6,6 +6,11 @@ const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const db       = require('../config/db');
 
+// NOTA su { error: 'CODICE' }: i campi `error` in questo file sono codici
+// stabili (es. 'PASSWORD_WRONG_CURRENT'), non frasi. Il frontend li traduce
+// con $t('errors.<codice>') in base alla lingua dell'utente — se cambi il
+// testo mostrato all'utente, modifica it.json/en.json, non questo file.
+
 // v8 di express-rate-limit valida i keyGenerator custom: se possono ricadere
 // su req.ip, l'IP va normalizzato con l'helper ipKeyGenerator (gestisce
 // correttamente gli indirizzi IPv6, che altrimenti permetterebbero di
@@ -15,7 +20,7 @@ const passwordChangeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   keyGenerator: (req) => (req.user?.id ? String(req.user.id) : ipKeyGenerator(req.ip)),
-  handler: (_req, res) => res.status(429).json({ error: 'Troppi tentativi. Riprova tra 15 minuti.' }),
+  handler: (_req, res) => res.status(429).json({ error: 'TOO_MANY_REQUESTS' }),
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -30,13 +35,13 @@ router.patch('/', async (req, res) => {
     const values = [];
 
     if (name !== undefined) {
-      if (!name.trim()) return res.status(400).json({ error: 'Il nome non può essere vuoto' });
+      if (!name.trim()) return res.status(400).json({ error: 'NAME_REQUIRED' });
       fields.push('name = ?');
       values.push(name.trim());
     }
 
     if (lastName !== undefined) {
-      if (!lastName.trim()) return res.status(400).json({ error: 'Il cognome non può essere vuoto' });
+      if (!lastName.trim()) return res.status(400).json({ error: 'LASTNAME_REQUIRED' });
       fields.push('lastName = ?');
       values.push(lastName.trim());
     }
@@ -50,7 +55,7 @@ router.patch('/', async (req, res) => {
     }
 
     if (!fields.length) {
-      return res.status(400).json({ error: 'Nessun dato da aggiornare' });
+      return res.status(400).json({ error: 'NO_DATA_TO_UPDATE' });
     }
 
     values.push(req.user.id);
@@ -63,7 +68,7 @@ router.patch('/', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     console.error('PATCH /api/utenti:', err);
-    res.status(500).json({ error: 'Errore nell\'aggiornamento dei dati utente' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -74,20 +79,20 @@ router.patch('/password', passwordChangeLimiter, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
-    return res.status(400).json({ error: 'Dati mancanti' });
+    return res.status(400).json({ error: 'PASSWORD_FIELDS_REQUIRED' });
   }
 
   if (newPassword.length < 8) {
-    return res.status(400).json({ error: 'La nuova password deve avere almeno 8 caratteri' });
+    return res.status(400).json({ error: 'PASSWORD_TOO_SHORT' });
   }
 
   try {
     const [rows] = await db.query('SELECT password_hash FROM utenti WHERE id = ?', [req.user.id]);
-    if (!rows.length) return res.status(404).json({ error: 'Utente non trovato' });
+    if (!rows.length) return res.status(404).json({ error: 'USER_NOT_FOUND' });
 
     const valid = await bcrypt.compare(currentPassword, rows[0].password_hash);
     if (!valid) {
-      return res.status(401).json({ error: 'Password attuale non corretta' });
+      return res.status(401).json({ error: 'PASSWORD_WRONG_CURRENT' });
     }
 
     const newHash = await bcrypt.hash(newPassword, 10);
@@ -105,7 +110,7 @@ router.patch('/password', passwordChangeLimiter, async (req, res) => {
     res.json({ message: 'Password aggiornata con successo' });
   } catch (err) {
     console.error('PATCH /api/utenti/password:', err);
-    res.status(500).json({ error: 'Errore interno al server' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 

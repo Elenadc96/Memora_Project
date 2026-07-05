@@ -113,7 +113,7 @@
 import { defineComponent } from 'vue'
 import { UserRound, KeyRound, ChevronDown, Pencil } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
-import { showSaveError } from '@/utils/notify'
+import { showSaveError, apiErrorMessage } from '@/utils/notify'
 
 export default defineComponent({
   name: 'PersonalInfoCard',
@@ -197,14 +197,9 @@ export default defineComponent({
           this.showPasswordForm = false
         }, 2500)
       } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status
-        if (status === 401) {
-          this.passwordError = this.$t('settings.personal_data.password_wrong_current')
-        } else if (status === 429) {
-          this.passwordError = this.$t('common.too_many_requests')
-        } else {
-          this.passwordError = this.$t('common.save_error')
-        }
+        // Il backend risponde con un codice (es. PASSWORD_WRONG_CURRENT, TOO_MANY_REQUESTS);
+        // apiErrorMessage lo traduce lui, invece di indovinare il significato dal solo status HTTP.
+        this.passwordError = apiErrorMessage(err)
       } finally {
         this.passwordLoading = false
       }

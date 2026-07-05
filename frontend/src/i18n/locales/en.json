@@ -250,5 +250,27 @@
     "difficulty_medium": "Medium",
     "difficulty_hard": "Hard",
     "too_many_requests": "Too many attempts. Please try again in 15 minutes."
+  },
+  "errors": {
+    "AUTH_REQUIRED": "You must be logged in.",
+    "AUTH_INVALID_TOKEN": "Invalid or expired session.",
+    "INVALID_CREDENTIALS": "Incorrect email or password.",
+    "EMAIL_ALREADY_REGISTERED": "This email is already registered.",
+    "USER_NOT_FOUND": "User not found.",
+    "NAME_REQUIRED": "First name cannot be empty.",
+    "LASTNAME_REQUIRED": "Last name cannot be empty.",
+    "NO_DATA_TO_UPDATE": "No data to update.",
+    "PASSWORD_FIELDS_REQUIRED": "Current and new password are required.",
+    "PASSWORD_TOO_SHORT": "New password must be at least 8 characters.",
+    "PASSWORD_WRONG_CURRENT": "Current password is incorrect.",
+    "TOO_MANY_REQUESTS": "Too many attempts. Please try again in 15 minutes.",
+    "SUBJECT_NAME_REQUIRED": "Subject name is required.",
+    "SUBJECT_NOT_FOUND": "Subject not found.",
+    "LESSON_NAME_REQUIRED": "Lesson name is required.",
+    "LESSON_NOT_FOUND": "Lesson not found.",
+    "FLASHCARD_QUESTION_ANSWER_REQUIRED": "Question and answer are required.",
+    "FLASHCARD_NOT_FOUND": "Flashcard not found.",
+    "SESSION_FIELDS_REQUIRED": "subjectId and lessonId are required.",
+    "SERVER_ERROR": "An error occurred."
   }
 }

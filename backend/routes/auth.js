@@ -2,7 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt'); 
 const jwt = require('jsonwebtoken'); 
-const db = require('../config/db'); 
+const db = require('../config/db');
+
+// NOTA su { error: 'CODICE' }: i campi `error` in questo file sono codici
+// stabili (es. 'INVALID_CREDENTIALS'), non frasi. Il frontend li traduce con
+// $t('errors.<codice>') in base alla lingua dell'utente — se cambi il testo
+// mostrato all'utente, modifica it.json/en.json, non questo file.
 
 // --- REGISTRAZIONE ---
 router.post('/register', async (req, res) => {
@@ -15,7 +20,7 @@ router.post('/register', async (req, res) => {
         // Controllo preventivo: l'utente esiste già?
         const [existing] = await db.query('SELECT id FROM utenti WHERE email = ?', [email]);
         if (existing.length > 0) {
-            return res.status(400).json({ error: "Email già registrata" });
+            return res.status(400).json({ error: "EMAIL_ALREADY_REGISTERED" });
         }
 
         // Hashing della password (sicurezza richiesta dalle specifiche)
@@ -43,7 +48,7 @@ router.post('/register', async (req, res) => {
 
     } catch (err) {
         console.error("ERRORE DURANTE LA REGISTRAZIONE:", err);
-        res.status(500).json({ error: "Errore interno al server", details: err.message });
+        res.status(500).json({ error: "SERVER_ERROR" });
     }
 });
 
@@ -55,9 +60,10 @@ router.post('/login', async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM utenti WHERE email = ?', [email]);
         
-        // Messaggio generico per sicurezza 
+        // Messaggio generico per sicurezza (stesso codice sia email inesistente
+        // che password errata, per non rivelare quale delle due sia sbagliata)
         if (rows.length === 0) {
-            return res.status(401).json({ error: "Credenziali errate" });
+            return res.status(401).json({ error: "INVALID_CREDENTIALS" });
         }
 
         const user = rows[0];
@@ -65,9 +71,9 @@ router.post('/login', async (req, res) => {
         // 3. Confronto tra password (chiaro) e password_hash (DB)
         // Se uno dei due è undefined, bcrypt lancia l'errore "data and hash arguments required"
         const validPass = await bcrypt.compare(password, user.password_hash);
-        
+
         if (!validPass) {
-            return res.status(401).json({ error: "Credenziali errate" });
+            return res.status(401).json({ error: "INVALID_CREDENTIALS" });
         }
 
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '2h' });
@@ -82,14 +88,14 @@ router.post('/login', async (req, res) => {
 
     } catch (err) {
         console.error("DETTAGLIO ERRORE LOGIN:", err);
-        res.status(500).json({ error: "Errore interno al server" });
+        res.status(500).json({ error: "SERVER_ERROR" });
     }
 });
 
 // --- SESSIONE CORRENTE ---
 router.get('/me', async (req, res) => {
     const token = req.cookies.access_token;
-    if (!token) return res.status(401).json({ error: "Non autenticato" });
+    if (!token) return res.status(401).json({ error: "AUTH_REQUIRED" });
 
     try {
         const verified = jwt.verify(token, process.env.JWT_SECRET);
@@ -100,11 +106,11 @@ router.get('/me', async (req, res) => {
             'SELECT id, name, lastName, email, settings FROM utenti WHERE id = ?',
             [verified.id]
         );
-        if (!rows.length) return res.status(401).json({ error: "Utente non trovato" });
+        if (!rows.length) return res.status(401).json({ error: "USER_NOT_FOUND" });
 
         res.json(rows[0]);
     } catch {
-        res.status(401).json({ error: "Token non valido o scaduto" });
+        res.status(401).json({ error: "AUTH_INVALID_TOKEN" });
     }
 });
 

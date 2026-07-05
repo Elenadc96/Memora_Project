@@ -4,6 +4,13 @@ const db          = require('../config/db');
 const verifyToken = require('../middleware/auth');
 const { recordSessionCompletion } = require('../services/gamificationService');
 
+// NOTA su { error: 'CODICE' }: i campi `error` in questo file sono codici
+// stabili (es. 'SUBJECT_NOT_FOUND'), non frasi. Il frontend li traduce con
+// $t('errors.<codice>') in base alla lingua dell'utente — se cambi il testo
+// mostrato all'utente, modifica it.json/en.json, non questo file. Gli errori
+// 500 imprevisti usano tutti il codice generico 'SERVER_ERROR': i dettagli
+// veri restano solo nel log lato server (console.error), non nella risposta.
+
 // ── Health check ──────────────────────────────────────────────────────────
 router.get('/status', async (req, res) => {
   try {
@@ -33,7 +40,7 @@ router.get('/subjects', verifyToken, async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error('GET /api/subjects:', err);
-    res.status(500).json({ error: 'Errore nel recupero delle materie' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -42,7 +49,7 @@ router.post('/subjects', verifyToken, async (req, res) => {
   try {
     const { subjectName, description, color, emoji } = req.body;
     if (!subjectName?.trim()) {
-      return res.status(400).json({ error: 'Il nome della materia è obbligatorio' });
+      return res.status(400).json({ error: 'SUBJECT_NAME_REQUIRED' });
     }
     const [result] = await db.query(
       'INSERT INTO subject (user_id, subjectName, description, color, emoji) VALUES (?, ?, ?, ?, ?)',
@@ -59,7 +66,7 @@ router.post('/subjects', verifyToken, async (req, res) => {
     });
   } catch (err) {
     console.error('POST /api/subjects:', err);
-    res.status(500).json({ error: 'Errore nella creazione della materia' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -68,17 +75,17 @@ router.put('/subjects/:id', verifyToken, async (req, res) => {
   try {
     const { subjectName, description, color, emoji } = req.body;
     if (!subjectName?.trim()) {
-      return res.status(400).json({ error: 'Il nome della materia è obbligatorio' });
+      return res.status(400).json({ error: 'SUBJECT_NAME_REQUIRED' });
     }
     const [result] = await db.query(
       'UPDATE subject SET subjectName = ?, description = ?, color = ?, emoji = ? WHERE id = ? AND user_id = ?',
       [subjectName.trim(), description?.trim() || null, color || '#2563EB', emoji || '📚', req.params.id, req.user.id]
     );
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Materia non trovata' });
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'SUBJECT_NOT_FOUND' });
     res.json({ id: Number(req.params.id), subjectName: subjectName.trim(), description: description?.trim() || '', color: color || '#2563EB', emoji: emoji || '📚' });
   } catch (err) {
     console.error('PUT /api/subjects/:id:', err);
-    res.status(500).json({ error: 'Errore nella modifica della materia' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -89,11 +96,11 @@ router.delete('/subjects/:id', verifyToken, async (req, res) => {
       'DELETE FROM subject WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Materia non trovata' });
+    if (result.affectedRows === 0) return res.status(404).json({ error: 'SUBJECT_NOT_FOUND' });
     res.json({ success: true });
   } catch (err) {
     console.error('DELETE /api/subjects/:id:', err);
-    res.status(500).json({ error: 'Errore nell\'eliminazione della materia' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -110,11 +117,11 @@ router.get('/subjects/:id', verifyToken, async (req, res) => {
       WHERE s.id = ? AND s.user_id = ?
       GROUP BY s.id
     `, [req.params.id, req.user.id]);
-    if (!rows.length) return res.status(404).json({ error: 'Materia non trovata' });
+    if (!rows.length) return res.status(404).json({ error: 'SUBJECT_NOT_FOUND' });
     res.json(rows[0]);
   } catch (err) {
     console.error('GET /api/subjects/:id:', err);
-    res.status(500).json({ error: 'Errore nel recupero della materia' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -138,7 +145,7 @@ router.get('/subjects/:id/lessons', verifyToken, async (req, res) => {
       'SELECT id FROM subject WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
-    if (!subjectRows.length) return res.status(404).json({ error: 'Materia non trovata' });
+    if (!subjectRows.length) return res.status(404).json({ error: 'SUBJECT_NOT_FOUND' });
 
     const [rows] = await db.query(`
       SELECT l.id, l.name, l.description, l.subject_id,
@@ -155,7 +162,7 @@ router.get('/subjects/:id/lessons', verifyToken, async (req, res) => {
     res.json(rows);
   } catch (err) {
     console.error('GET /api/subjects/:id/lessons:', err);
-    res.status(500).json({ error: 'Errore nel recupero delle lezioni' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -166,10 +173,10 @@ router.post('/subjects/:id/lessons', verifyToken, async (req, res) => {
       'SELECT id FROM subject WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
-    if (!subjectRows.length) return res.status(404).json({ error: 'Materia non trovata' });
+    if (!subjectRows.length) return res.status(404).json({ error: 'SUBJECT_NOT_FOUND' });
 
     const { name, description } = req.body;
-    if (!name?.trim()) return res.status(400).json({ error: 'Il nome della lezione è obbligatorio' });
+    if (!name?.trim()) return res.status(400).json({ error: 'LESSON_NAME_REQUIRED' });
     const [result] = await db.query(
       'INSERT INTO lessons (name, description, subject_id) VALUES (?, ?, ?)',
       [name.trim(), description?.trim() || null, req.params.id]
@@ -178,7 +185,7 @@ router.post('/subjects/:id/lessons', verifyToken, async (req, res) => {
     res.status(201).json({ ...rows[0], flashcardCount: 0 });
   } catch (err) {
     console.error('POST /api/subjects/:id/lessons:', err);
-    res.status(500).json({ error: 'Errore nella creazione della lezione' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -192,7 +199,7 @@ router.patch('/lessons/:id', verifyToken, async (req, res) => {
        WHERE l.id = ? AND s.user_id = ?`,
       [req.params.id, req.user.id]
     );
-    if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+    if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
 
     const { status, last_study, last_lesson_duration } = req.body;
     await db.query(
@@ -206,7 +213,7 @@ router.patch('/lessons/:id', verifyToken, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('PATCH /api/lessons/:id:', err);
-    res.status(500).json({ error: "Errore nell'aggiornamento della lezione" });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -226,7 +233,7 @@ router.delete('/lessons/:id', verifyToken, async (req, res) => {
        WHERE l.id = ? AND s.user_id = ?`,
       [req.params.id, req.user.id]
     );
-    if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+    if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
 
     // 1. Trova le flashcard della lezione prima che il CASCADE le scolleghi
     const [fcRows] = await db.query(
@@ -246,7 +253,7 @@ router.delete('/lessons/:id', verifyToken, async (req, res) => {
     res.json({ success: true, deletedFlashcards: flashcardIds.length });
   } catch (err) {
     console.error('DELETE /api/lessons/:id:', err);
-    res.status(500).json({ error: 'Errore nell\'eliminazione della lezione' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -266,7 +273,7 @@ router.get('/lessons/:id/flashcards', verifyToken, async (req, res) => {
        WHERE l.id = ? AND s.user_id = ?`,
       [req.params.id, req.user.id]
     );
-    if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+    if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
 
     const [rows] = await db.query(`
       SELECT f.id, f.content, f.difficult, f.created_at, fl.status
@@ -289,7 +296,7 @@ router.get('/lessons/:id/flashcards', verifyToken, async (req, res) => {
     res.json(parsed);
   } catch (err) {
     console.error('GET /api/lessons/:id/flashcards:', err);
-    res.status(500).json({ error: 'Errore nel recupero delle flashcard' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -302,11 +309,11 @@ router.post('/lessons/:id/flashcards', verifyToken, async (req, res) => {
        WHERE l.id = ? AND s.user_id = ?`,
       [req.params.id, req.user.id]
     );
-    if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+    if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
 
     const { question, answer, difficult = 0 } = req.body;
     if (!question?.trim() || !answer?.trim()) {
-      return res.status(400).json({ error: 'Domanda e risposta sono obbligatorie' });
+      return res.status(400).json({ error: 'FLASHCARD_QUESTION_ANSWER_REQUIRED' });
     }
     const content = JSON.stringify({ question: question.trim(), answer: answer.trim() });
     const [fcResult] = await db.query(
@@ -326,7 +333,7 @@ router.post('/lessons/:id/flashcards', verifyToken, async (req, res) => {
     });
   } catch (err) {
     console.error('POST /api/lessons/:id/flashcards:', err);
-    res.status(500).json({ error: 'Errore nella creazione della flashcard' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -365,7 +372,7 @@ router.post('/lessons/:id/flashcards', verifyToken, async (req, res) => {
 router.post('/sessions', verifyToken, async (req, res) => {
   const userId = req.user.id;
   const { subjectId, lessonId, duration = 0, results = [] } = req.body;
-  if (!subjectId || !lessonId) return res.status(400).json({ error: 'subjectId e lessonId obbligatori' });
+  if (!subjectId || !lessonId) return res.status(400).json({ error: 'SESSION_FIELDS_REQUIRED' });
 
   // subjectId/lessonId arrivano dal body: senza questo controllo un utente
   // potrebbe salvare una sessione (e far scattare punti/streak/badge) su una
@@ -376,7 +383,7 @@ router.post('/sessions', verifyToken, async (req, res) => {
      WHERE l.id = ? AND l.subject_id = ? AND s.user_id = ?`,
     [lessonId, subjectId, userId]
   );
-  if (!own.length) return res.status(404).json({ error: 'Lezione non trovata' });
+  if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
 
   const knew   = results.filter(r => r.rating === 'knew').length;
   const almost = results.filter(r => r.rating === 'almost').length;
@@ -417,7 +424,7 @@ router.post('/sessions', verifyToken, async (req, res) => {
   } catch (err) {
     await conn.rollback();
     console.error('POST /api/sessions:', err);
-    res.status(500).json({ error: 'Errore nel salvataggio della sessione' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   } finally {
     conn.release();
   }
@@ -452,7 +459,7 @@ router.get('/ranking', verifyToken, async (req, res) => {
     res.json(ranking);
   } catch (err) {
     console.error('GET /api/ranking:', err);
-    res.status(500).json({ error: 'Errore nel recupero della classifica' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -470,11 +477,11 @@ router.put('/flashcards/:id', verifyToken, async (req, res) => {
        WHERE f.id = ? AND s.user_id = ?`,
       [req.params.id, req.user.id]
     );
-    if (!own.length) return res.status(404).json({ error: 'Flashcard non trovata' });
+    if (!own.length) return res.status(404).json({ error: 'FLASHCARD_NOT_FOUND' });
 
     const { question, answer, difficult } = req.body;
     if (!question?.trim() || !answer?.trim()) {
-      return res.status(400).json({ error: 'Domanda e risposta sono obbligatorie' });
+      return res.status(400).json({ error: 'FLASHCARD_QUESTION_ANSWER_REQUIRED' });
     }
     const content = JSON.stringify({ question: question.trim(), answer: answer.trim() });
     await db.query(
@@ -489,7 +496,7 @@ router.put('/flashcards/:id', verifyToken, async (req, res) => {
     });
   } catch (err) {
     console.error('PUT /api/flashcards/:id:', err);
-    res.status(500).json({ error: 'Errore nella modifica della flashcard' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -504,13 +511,13 @@ router.delete('/flashcards/:id', verifyToken, async (req, res) => {
        WHERE f.id = ? AND s.user_id = ?`,
       [req.params.id, req.user.id]
     );
-    if (!own.length) return res.status(404).json({ error: 'Flashcard non trovata' });
+    if (!own.length) return res.status(404).json({ error: 'FLASHCARD_NOT_FOUND' });
 
     await db.query('DELETE FROM flashcard WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (err) {
     console.error('DELETE /api/flashcards/:id:', err);
-    res.status(500).json({ error: 'Errore nell\'eliminazione della flashcard' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 
@@ -633,7 +640,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
     });
   } catch (err) {
     console.error('GET /api/dashboard:', err);
-    res.status(500).json({ error: 'Errore nel recupero dei dati della dashboard' });
+    res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });
 

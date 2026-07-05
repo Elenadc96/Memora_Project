@@ -8,8 +8,10 @@ const verifyToken = (req, res, next) => {
     const token = req.cookies.access_token;
 
     // 2. Controllo presenza: se il cookie manca, l'accesso è negato immediatamente
+    // L'errore è un CODICE (non una frase) perché il frontend lo traduce lui
+    // via i18n in base alla lingua dell'utente (vedi errors.* in it.json/en.json).
     if (!token) {
-        return res.status(401).json({ error: "Accesso negato. Devi effettuare il login." });
+        return res.status(401).json({ error: "AUTH_REQUIRED" });
     }
 
     try {
@@ -25,7 +27,7 @@ const verifyToken = (req, res, next) => {
         next();
     } catch (err) {
         // 6. Gestione errore: se il token è scaduto o manomesso, restituiamo un errore
-        res.status(401).json({ error: "Token non valido o sessione scaduta." });
+        res.status(401).json({ error: "AUTH_INVALID_TOKEN" });
     }
 };
 
