@@ -114,7 +114,46 @@ router.patch('/password', passwordChangeLimiter, async (req, res) => {
   }
 });
 
-// TODO: DELETE /api/utenti — elimina l'account dell'utente loggato e tutti i dati correlati
-// (subject, lessons, flashcard_lesson, sessioni, badge, points). Richiede conferma password.
+// DELETE /api/utenti — elimina l'account dell'utente loggato e tutti i dati correlati.
+//
+// Il CASCADE dello schema pulisce subject/lessons/flashcard_lesson/sessioni/
+// user_badge/points quando si cancella la riga in utenti, ma NON tocca la
+// tabella flashcard stessa (le flashcard diventerebbero orfane) — stessa
+// situazione di DELETE /api/lessons/:id in routes/api.js, stessa soluzione:
+// 1. si recuperano gli id delle flashcard dell'utente prima del CASCADE
+// 2. si cancella l'utente (il CASCADE pulisce tutto il resto)
+// 3. si cancellano le flashcard orfane con quegli id
+router.delete('/', async (req, res) => {
+  const conn = await db.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    const [fcRows] = await conn.query(
+      `SELECT fl.flashcard_id
+       FROM flashcard_lesson fl
+       JOIN lessons l ON l.id = fl.lesson_id
+       JOIN subject s ON s.id = l.subject_id
+       WHERE s.user_id = ?`,
+      [req.user.id]
+    );
+    const flashcardIds = fcRows.map(r => r.flashcard_id);
+
+    await conn.query('DELETE FROM utenti WHERE id = ?', [req.user.id]);
+
+    if (flashcardIds.length) {
+      await conn.query('DELETE FROM flashcard WHERE id IN (?)', [flashcardIds]);
+    }
+
+    await conn.commit();
+    res.clearCookie('access_token');
+    res.json({ message: 'Account eliminato con successo' });
+  } catch (err) {
+    await conn.rollback();
+    console.error('DELETE /api/utenti:', err);
+    res.status(500).json({ error: 'SERVER_ERROR' });
+  } finally {
+    conn.release();
+  }
+});
 
 module.exports = router;

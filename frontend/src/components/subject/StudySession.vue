@@ -256,7 +256,9 @@ const exitDir = ref<'left' | 'right' | null>(null)
 
 const total = computed(() => queue.value.length)
 const current = computed(() => queue.value[currentIndex.value])
-const progress = computed(() => (currentIndex.value / total.value) * 100)
+const progress = computed(() =>
+  finished.value || total.value === 0 ? 100 : (currentIndex.value / total.value) * 100,
+)
 const knew = computed(() => results.value.filter(r => r.rating === 'knew').length)
 const almost = computed(() => results.value.filter(r => r.rating === 'almost').length)
 const forgot = computed(() => results.value.filter(r => r.rating === 'forgot').length)
@@ -271,12 +273,18 @@ const summaryBars = computed(() => [
 ])
 
 let timerId: ReturnType<typeof setInterval> | null = null
+
+function stopTimer(): void {
+  if (timerId) {
+    clearInterval(timerId)
+    timerId = null
+  }
+}
+
 onMounted(() => {
   timerId = setInterval(() => elapsed.value++, 1000)
 })
-onUnmounted(() => {
-  if (timerId) clearInterval(timerId)
-})
+onUnmounted(stopTimer)
 
 function formatTime(s: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
@@ -291,6 +299,7 @@ function advance(rating: Rating) {
     flipped.value = false
     if (currentIndex.value + 1 >= total.value) {
       finished.value = true
+      stopTimer()
       emit('complete', results.value, elapsed.value)
     } else {
       currentIndex.value++
@@ -306,5 +315,7 @@ function restart() {
   finished.value = false
   elapsed.value = 0
   exitDir.value = null
+  stopTimer()
+  timerId = setInterval(() => elapsed.value++, 1000)
 }
 </script>

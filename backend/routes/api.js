@@ -89,15 +89,37 @@ router.put('/subjects/:id', verifyToken, async (req, res) => {
   }
 });
 
-// DELETE /api/subjects/:id — elimina materia e tutto il suo contenuto (CASCADE nel DB)
+// DELETE /api/subjects/:id — elimina materia e tutto il suo contenuto.
+//
+// Il CASCADE dello schema rimuove automaticamente le righe in lessons e
+// flashcard_lesson quando si cancella una subject, ma NON tocca la tabella
+// flashcard stessa (le flashcard diventerebbero orfane) — stessa situazione
+// di DELETE /api/lessons/:id, stessa soluzione:
+// 1. si recuperano gli id delle flashcard di tutte le lezioni della materia
+// 2. si cancella la materia (il CASCADE pulisce lessons e flashcard_lesson)
+// 3. si cancellano le flashcard ora orfane con quegli id
 router.delete('/subjects/:id', verifyToken, async (req, res) => {
   try {
+    const [fcRows] = await db.query(
+      `SELECT fl.flashcard_id
+       FROM flashcard_lesson fl
+       JOIN lessons l ON l.id = fl.lesson_id
+       WHERE l.subject_id = ?`,
+      [req.params.id]
+    );
+    const flashcardIds = fcRows.map(r => r.flashcard_id);
+
     const [result] = await db.query(
       'DELETE FROM subject WHERE id = ? AND user_id = ?',
       [req.params.id, req.user.id]
     );
     if (result.affectedRows === 0) return res.status(404).json({ error: 'SUBJECT_NOT_FOUND' });
-    res.json({ success: true });
+
+    if (flashcardIds.length > 0) {
+      await db.query('DELETE FROM flashcard WHERE id IN (?)', [flashcardIds]);
+    }
+
+    res.json({ success: true, deletedFlashcards: flashcardIds.length });
   } catch (err) {
     console.error('DELETE /api/subjects/:id:', err);
     res.status(500).json({ error: 'SERVER_ERROR' });

@@ -74,7 +74,7 @@
   }
 
   .btn-ghost {
-    @apply text-primary hover:bg-surface font-medium py-2 px-4 rounded-md transition-colors;
+    @apply text-primary dark:text-on-surface hover:bg-accent/10 dark:hover:bg-white/10 font-medium py-2 px-4 rounded-md transition-colors;
   }
 
   .input-field {

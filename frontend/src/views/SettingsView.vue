@@ -44,11 +44,14 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { AlertOctagon, Trash2 } from 'lucide-vue-next'
+import Swal from 'sweetalert2'
 import PersonalInfoCard from '@/components/settings/PersonalInfoCard.vue'
 import LanguageCard from '@/components/settings/LanguageCard.vue'
 import ThemeCard from '@/components/settings/ThemeCard.vue'
 import PrivacyPolicyCard from '@/components/settings/PrivacyPolicyCard.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import { useAuthStore } from '@/stores/auth'
+import { apiErrorMessage, swalTheme } from '@/utils/notify'
 
 export default defineComponent({
   name: 'SettingsView',
@@ -63,6 +66,11 @@ export default defineComponent({
     ConfirmDialog,
   },
 
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
+
   data() {
     return {
       showDeleteConfirm: false,
@@ -70,8 +78,13 @@ export default defineComponent({
   },
 
   methods: {
-    onDeleteAccount(): void {
-      // TODO: collegare all'endpoint di eliminazione account quando sarà disponibile
+    async onDeleteAccount(): Promise<void> {
+      try {
+        await this.authStore.deleteAccount()
+        this.$router.push('/login')
+      } catch (err: unknown) {
+        Swal.fire({ ...swalTheme(), icon: 'error', text: apiErrorMessage(err) })
+      }
     },
   },
 })
