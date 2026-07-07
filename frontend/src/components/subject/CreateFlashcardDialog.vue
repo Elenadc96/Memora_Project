@@ -6,7 +6,7 @@
   <BaseDialog v-model="isOpen" :title="$t('subject.create_flashcard.title')">
     <form @submit.prevent="submit" class="space-y-4">
       <div class="space-y-1">
-        <label class="block text-sm text-primary font-medium">
+        <label class="block text-sm text-primary dark:text-on-surface font-medium">
           {{ $t('subject.create_flashcard.question_label') }} *
         </label>
         <textarea
@@ -20,7 +20,7 @@
       </div>
 
       <div class="space-y-1">
-        <label class="block text-sm text-primary font-medium">
+        <label class="block text-sm text-primary dark:text-on-surface font-medium">
           {{ $t('subject.create_flashcard.answer_label') }} *
         </label>
         <textarea
@@ -34,7 +34,7 @@
 
       <!-- Difficoltà -->
       <div class="space-y-1">
-        <label class="block text-sm text-primary font-medium">
+        <label class="block text-sm text-primary dark:text-on-surface font-medium">
           {{ $t('subject.create_flashcard.difficulty_label') }}
         </label>
         <div class="flex gap-2">
@@ -42,8 +42,8 @@
             v-for="level in difficultyLevels"
             :key="level.value"
             type="button"
-            class="diff-btn"
-            :class="[level.cls, { 'diff-btn--active': form.difficult === level.value }]"
+            class="difficulty-pill"
+            :class="[level.cls, { 'difficulty-pill--active': form.difficult === level.value }]"
             @click="form.difficult = level.value"
           >
             {{ level.label }}
@@ -88,9 +88,9 @@ export default defineComponent({
     return {
       form: { question: '', answer: '', difficult: 1 },
       difficultyLevels: [
-        { value: 1, label: 'Facile',    cls: 'diff-easy'   },
-        { value: 3, label: 'Medio',     cls: 'diff-medium' },
-        { value: 5, label: 'Difficile', cls: 'diff-hard'   },
+        { value: 1, label: 'Facile',    cls: 'difficulty-pill--easy'   },
+        { value: 3, label: 'Medio',     cls: 'difficulty-pill--medium' },
+        { value: 5, label: 'Difficile', cls: 'difficulty-pill--hard'   },
       ] as DifficultyLevel[],
     }
   },
@@ -112,16 +112,3 @@ export default defineComponent({
   },
 })
 </script>
-
-<style scoped>
-.diff-btn {
-  padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  border: 2px solid transparent; opacity: 0.5; transition: opacity 0.15s, border-color 0.15s;
-}
-.diff-btn:hover   { opacity: 0.8; }
-.diff-btn--active { opacity: 1; border-color: currentColor; }
-
-.diff-easy   { background: #d1fae5; color: #065f46; }
-.diff-medium { background: #fef3c7; color: #92400e; }
-.diff-hard   { background: #fee2e2; color: #991b1b; }
-</style>

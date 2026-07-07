@@ -98,7 +98,9 @@ export default defineComponent({
   color: var(--color-primary); opacity: 0.5;
   transition: opacity 0.15s, background 0.15s;
 }
+.dark .dialog-close { color: var(--color-on-surface); }
 .dialog-close:hover { opacity: 1; background: var(--color-accent-10); }
+.dark .dialog-close:hover { background: var(--color-white-10); }
 
 .dialog-body {
   padding: 1.5rem;

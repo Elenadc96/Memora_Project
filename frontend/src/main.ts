@@ -9,6 +9,7 @@ import axios from 'axios'
 import { useAuthStore } from './stores/auth'
 import Swal from 'sweetalert2'
 import { i18next } from './i18n'
+import { swalTheme } from './utils/notify'
 
 const Toast = Swal.mixin({
   toast: true,
@@ -45,6 +46,7 @@ axios.interceptors.response.use(
     if (error.response?.status === 401 && !error.config?.skipAuthRedirect && eraAutenticato) {
       authStore.user = null
       Toast.fire({
+        ...swalTheme(),
         icon: 'warning',
         title: i18next.t('session.expired_title'),
         text:  i18next.t('session.expired_text'),

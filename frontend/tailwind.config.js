@@ -18,6 +18,7 @@ module.exports = {
         'on-surface':   'var(--color-on-surface)',
         'text-primary': 'var(--color-text-primary)',
         'text-muted':   'var(--color-text-muted)',
+        danger:         'var(--color-danger)',
 
         /* Colori con supporto opacità: usano la funzione rgba() con i canali RGB.
            Questo permette bg-accent/10, bg-accent/20, text-primary/70 ecc.

@@ -47,7 +47,7 @@
                 <!-- Avatar -->
                 <div
                   class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                  :class="avatarColor(user.userId)"
+                  :style="{ backgroundColor: avatarColor(user.userId) }"
                 >{{ initials(user.name) }}</div>
 
                 <!-- Nome + punti -->
@@ -213,7 +213,13 @@ const BADGE_META: Record<string, { slug: string; iconComponent: Component; color
   clock:  { slug: 'nightowl',      iconComponent: Clock,    color: 'bg-cyan-400' },
 }
 
-const AVATAR_COLORS = ['bg-blue-500', 'bg-cyan-500', 'bg-purple-500', 'bg-green-500', 'bg-amber-500', 'bg-cyan-600', 'bg-purple-600', 'bg-slate-500']
+// Colori letti dalle CSS variable --color-avatar-1..8 (main.css) invece di
+// classi Tailwind fisse, così restano centralizzati con tutto il resto della
+// palette invece di essere sparsi nel componente.
+const AVATAR_COLORS = [
+  'var(--color-avatar-1)', 'var(--color-avatar-2)', 'var(--color-avatar-3)', 'var(--color-avatar-4)',
+  'var(--color-avatar-5)', 'var(--color-avatar-6)', 'var(--color-avatar-7)', 'var(--color-avatar-8)',
+]
 
 function avatarColor(userId: number): string {
   return AVATAR_COLORS[userId % AVATAR_COLORS.length]

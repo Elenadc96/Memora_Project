@@ -35,7 +35,16 @@
   },
   "dashboard": {
     "title": "General Overview",
-    "subtitle": "Your flashcard study statistics"
+    "subtitle": "Your flashcard study statistics",
+    "subjects_count_one": "{{count}} subject",
+    "subjects_count_other": "{{count}} subjects",
+    "no_subjects": "No subjects",
+    "streak_trend_one": "Streak: {{count}} day in a row",
+    "streak_trend_other": "Streak: {{count}} days in a row",
+    "start_studying": "Start studying!",
+    "study_time_trend": "Studied today",
+    "historical_rate": "All-time: {{pct}}%",
+    "no_historical_data": "No historical data"
   },
   "stats": {
     "total_cards": "Total Flashcards",
@@ -61,7 +70,8 @@
   },
   "progress": {
     "title": "Progress by Subject",
-    "cards_count": "{{count}} cards"
+    "cards_count": "{{count}} cards",
+    "empty": "No subjects available"
   },
   "subject": {
     "back": "Back",

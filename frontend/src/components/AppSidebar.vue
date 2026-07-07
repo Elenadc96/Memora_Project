@@ -119,7 +119,7 @@
           class="absolute bottom-full left-0 right-10 mb-2 bg-surface border border-border rounded-xl shadow-lg overflow-hidden z-50"
         >
           <button
-            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-primary hover:bg-accent/10 transition-colors"
+            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-primary dark:text-on-surface hover:bg-accent/10 dark:hover:bg-white/10 transition-colors"
             @click="goToSettings"
           >
             <Settings class="w-4 h-4" />
@@ -150,6 +150,7 @@ import { useFlashcardStore } from '@/stores/flashcards'
 import { useAuthStore } from '@/stores/auth'
 import CreateSubjectDialog from '@/components/subject/CreateSubjectDialog.vue'
 import Swal from 'sweetalert2'
+import { swalTheme } from '@/utils/notify'
 
 export default defineComponent({
   name: 'AppSidebar',
@@ -203,7 +204,7 @@ export default defineComponent({
         this.store.selectSubject(subject.id)
         this.$router.push(`/subject/${subject.id}`)
       } catch {
-        Swal.fire({ icon: 'error', title: 'Errore', text: 'Impossibile creare la materia. Riprova.' })
+        Swal.fire({ ...swalTheme(), icon: 'error', title: 'Errore', text: 'Impossibile creare la materia. Riprova.' })
       }
     },
 
@@ -225,14 +226,21 @@ export default defineComponent({
 
     async confirmLogout(): Promise<void> {
       this.showDropdown = false
+      // SweetAlert2 è fuori dal sistema Tailwind e non legge le classi dark:,
+      // quindi il colore va letto a runtime dalla CSS variable (che main.css
+      // ridefinisce già per il tema scuro) invece di essere fisso qui.
+      const dangerColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-danger')
+        .trim()
       const result = await Swal.fire({
+        ...swalTheme(),
         icon: 'question',
         title: this.$t('sidebar.logout_confirm_title'),
         text:  this.$t('sidebar.logout_confirm_text'),
         showCancelButton: true,
         confirmButtonText: this.$t('sidebar.logout_confirm_button'),
         cancelButtonText:  this.$t('common.cancel'),
-        confirmButtonColor: '#ef4444',
+        confirmButtonColor: dangerColor,
       })
 
       if (result.isConfirmed) {

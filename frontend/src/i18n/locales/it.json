@@ -35,7 +35,16 @@
   },
   "dashboard": {
     "title": "Panoramica Generale",
-    "subtitle": "Le tue statistiche di studio delle flashcard"
+    "subtitle": "Le tue statistiche di studio delle flashcard",
+    "subjects_count_one": "{{count}} materia",
+    "subjects_count_other": "{{count}} materie",
+    "no_subjects": "Nessuna materia",
+    "streak_trend_one": "Streak: {{count}} giorno consecutivo",
+    "streak_trend_other": "Streak: {{count}} giorni consecutivi",
+    "start_studying": "Inizia a studiare!",
+    "study_time_trend": "Tempo studiato oggi",
+    "historical_rate": "Storico: {{pct}}%",
+    "no_historical_data": "Nessun dato storico"
   },
   "stats": {
     "total_cards": "Flashcard Totali",
@@ -61,7 +70,8 @@
   },
   "progress": {
     "title": "Progresso per Materia",
-    "cards_count": "{{count}} carte"
+    "cards_count": "{{count}} carte",
+    "empty": "Nessuna materia disponibile"
   },
   "subject": {
     "back": "Indietro",

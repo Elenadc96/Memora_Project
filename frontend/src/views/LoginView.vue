@@ -6,8 +6,8 @@
         <!-- Logo -->
         <div class="text-center mb-8">
           <div class="flex items-center justify-center gap-3">
-            <h1 class="text-4xl text-primary font-serif tracking-wide">{{ $t('login.title') }}</h1>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <h1 class="text-4xl text-primary dark:text-on-surface font-serif tracking-wide">{{ $t('login.title') }}</h1>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-primary dark:text-on-surface" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
             </svg>
           </div>
@@ -16,12 +16,12 @@
         <!-- Form -->
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div class="space-y-1">
-            <label class="block text-sm text-primary">{{ $t('login.email') }}</label>
+            <label class="block text-sm text-primary dark:text-on-surface">{{ $t('login.email') }}</label>
             <input v-model="form.email" type="email" required class="input-field" />
           </div>
 
           <div class="space-y-1">
-            <label class="block text-sm text-primary">{{ $t('login.password') }}</label>
+            <label class="block text-sm text-primary dark:text-on-surface">{{ $t('login.password') }}</label>
             <input v-model="form.password" type="password" required class="input-field" />
           </div>
 
@@ -32,7 +32,7 @@
 
         <!-- Link alla registrazione -->
         <div class="mt-6 text-center">
-          <p class="text-primary mb-3">{{ $t('login.no_account') }}</p>
+          <p class="text-primary dark:text-on-surface mb-3">{{ $t('login.no_account') }}</p>
           <router-link to="/register" class="btn-primary px-6">
             {{ $t('login.register_button') }}
           </router-link>
@@ -47,7 +47,7 @@
 import { defineComponent } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import Swal from 'sweetalert2'
-import { apiErrorMessage } from '@/utils/notify'
+import { apiErrorMessage, swalTheme } from '@/utils/notify'
 
 export default defineComponent({
   name: 'LoginView',
@@ -65,7 +65,7 @@ export default defineComponent({
         await this.authStore.login({ email: this.form.email, password: this.form.password })
         this.$router.push('/dashboard')
       } catch (error: any) {
-        Swal.fire({ icon: 'error', title: 'Errore', text: apiErrorMessage(error) })
+        Swal.fire({ ...swalTheme(), icon: 'error', title: 'Errore', text: apiErrorMessage(error) })
       }
     },
   },
