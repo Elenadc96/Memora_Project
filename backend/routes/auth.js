@@ -1,13 +1,30 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcrypt'); 
-const jwt = require('jsonwebtoken'); 
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = require('express-rate-limit');
 const db = require('../config/db');
 
 // NOTA su { error: 'CODICE' }: i campi `error` in questo file sono codici
 // stabili (es. 'INVALID_CREDENTIALS'), non frasi. Il frontend li traduce con
 // $t('errors.<codice>') in base alla lingua dell'utente — se cambi il testo
 // mostrato all'utente, modifica it.json/en.json, non questo file.
+
+// Senza questo limite, chiunque potrebbe tentare password a raffica contro
+// un account (brute force) senza alcun blocco: prima di questo fix il login
+// non aveva NESSUN rate limiting, a differenza del cambio password che lo
+// ha già (vedi users.js). La chiave è l'IP (non l'utente: non è ancora
+// autenticato quando arriva qui) — ipKeyGenerator normalizza l'IPv6 come
+// richiesto da express-rate-limit v8.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => ipKeyGenerator(req.ip),
+  handler: (_req, res) => res.status(429).json({ error: 'TOO_MANY_REQUESTS' }),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // --- REGISTRAZIONE ---
 router.post('/register', async (req, res) => {
@@ -53,7 +70,7 @@ router.post('/register', async (req, res) => {
 });
 
 // --- LOGIN ---
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     // 2. Ricevi 'password' dal frontend (non 'password_hash')
     const { email, password } = req.body;
     

@@ -45,7 +45,9 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async login({ email, password }: LoginPayload): Promise<void> {
-      const { data } = await axios.post<AuthResponse>('/api/auth/login', { email, password })
+      // skipAuthRedirect: un 401 qui è "credenziali sbagliate", non una
+      // sessione scaduta — lo gestisce già il catch di chi chiama login().
+      const { data } = await axios.post<AuthResponse>('/api/auth/login', { email, password }, { skipAuthRedirect: true })
       this.user  = data.user
     },
 
@@ -93,7 +95,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-      await axios.patch('/api/utenti/password', { currentPassword, newPassword })
+      // skipAuthRedirect: qui l'utente è già autenticato, quindi senza il
+      // flag il check "eraAutenticato" dell'interceptor non basterebbe a
+      // escludere questo caso — un 401 di "password attuale sbagliata"
+      // andrebbe comunque a scatenare il redirect globale.
+      await axios.patch('/api/utenti/password', { currentPassword, newPassword }, { skipAuthRedirect: true })
     },
 
     async logout(): Promise<void> {
