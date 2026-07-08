@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const db = require('../config/db');
-const { isValidPassword } = require('../utils/validators');
+const { isValidPassword, isValidSettings } = require('../utils/validators');
 
 // NOTA su { error: 'CODICE' }: i campi `error` in questo file sono codici
 // stabili (es. 'INVALID_CREDENTIALS'), non frasi. Il frontend li traduce con
@@ -36,6 +36,10 @@ router.post('/register', async (req, res) => {
 
     if (!isValidPassword(password)) {
         return res.status(400).json({ error: 'PASSWORD_WEAK' });
+    }
+
+    if (!isValidSettings(settings)) {
+        return res.status(400).json({ error: 'INVALID_SETTINGS' });
     }
 
     const conn = await db.getConnection();

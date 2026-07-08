@@ -286,6 +286,7 @@
     "FLASHCARD_NOT_FOUND": "Flashcard not found.",
     "SESSION_FIELDS_REQUIRED": "subjectId and lessonId are required.",
     "SERVER_ERROR": "An error occurred.",
-    "PASSWORD_WEAK": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a number."
+    "PASSWORD_WEAK": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a number.",
+    "INVALID_SETTINGS": "Invalid settings."
   }
 }

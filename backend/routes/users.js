@@ -5,7 +5,7 @@ const jwt      = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const db       = require('../config/db');
-const { isValidPassword } = require('../utils/validators');
+const { isValidPassword, isValidSettings } = require('../utils/validators');
 
 // NOTA su { error: 'CODICE' }: i campi `error` in questo file sono codici
 // stabili (es. 'PASSWORD_WRONG_CURRENT'), non frasi. Il frontend li traduce
@@ -48,6 +48,7 @@ router.patch('/', async (req, res) => {
     }
 
     if (settings !== undefined) {
+      if (!isValidSettings(settings)) return res.status(400).json({ error: 'INVALID_SETTINGS' });
       // settings è un blob unico (tema + lingua): a differenza di name/lastName
       // non ha colonne dedicate, quindi va sempre sovrascritto per intero.
       // È il frontend a doverlo inviare già completo ad ogni salvataggio.
