@@ -56,6 +56,17 @@
             <input v-model="form.confirmPassword" type="password" required class="input-field" />
           </div>
 
+          <!-- Consenso Privacy Policy -->
+          <label class="flex items-start gap-2 cursor-pointer">
+            <input v-model="form.acceptedPrivacy" type="checkbox" class="mt-0.5 accent-primary flex-shrink-0" />
+            <span class="text-sm text-primary dark:text-on-surface">
+              {{ $t('register.privacy_label') }}
+              <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" class="text-accent underline hover:no-underline">
+                {{ $t('register.privacy_link') }}
+              </a>
+            </span>
+          </label>
+
           <button type="submit" class="btn-primary w-full mt-6">
             {{ $t('register.submit') }}
           </button>
@@ -85,7 +96,7 @@ export default defineComponent({
   name: 'RegisterView',
   data() {
     return {
-      form: { name: '', lastName: '', email: '', password: '', confirmPassword: '' },
+      form: { name: '', lastName: '', email: '', password: '', confirmPassword: '', acceptedPrivacy: false },
     }
   },
   computed: {
@@ -105,6 +116,10 @@ export default defineComponent({
   },
   methods: {
     async handleSubmit(): Promise<void> {
+      if (!this.form.acceptedPrivacy) {
+        Swal.fire({ ...swalTheme(), icon: 'error', title: 'Errore', text: this.$t('register.privacy_required') })
+        return
+      }
       if (!this.passwordValid) {
         Swal.fire({ ...swalTheme(), icon: 'error', title: 'Errore', text: this.$t('errors.PASSWORD_WEAK') })
         return

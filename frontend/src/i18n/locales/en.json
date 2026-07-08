@@ -11,7 +11,10 @@
     "pwd_min_length": "At least 8 characters",
     "pwd_uppercase": "At least one uppercase letter",
     "pwd_lowercase": "At least one lowercase letter",
-    "pwd_number": "At least one number"
+    "pwd_number": "At least one number",
+    "privacy_label": "I have read and accept the",
+    "privacy_link": "Privacy Policy",
+    "privacy_required": "You must accept the Privacy Policy to continue."
   },
   "login": {
     "title": "MEMORA",
