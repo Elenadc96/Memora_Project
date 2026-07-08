@@ -58,9 +58,10 @@ router.post('/register', async (req, res) => {
         const user = { id: result.insertId, email, name, lastName, settings: initialSettings };
 
         res.cookie('access_token', token, {
-            httpOnly: true, // Sicurezza XSS 
-            sameSite: 'Strict', // Sicurezza CSRF 
-            maxAge: 7200000 
+            httpOnly: true, // Sicurezza XSS
+            secure: process.env.NODE_ENV === 'production', // Solo HTTPS in produzione
+            sameSite: 'Strict', // Sicurezza CSRF
+            maxAge: 7200000
         }).status(201).json({ message: "Registrazione completata", user });
 
     } catch (err) {
@@ -97,10 +98,11 @@ router.post('/login', loginLimiter, async (req, res) => {
 
         res.cookie('access_token', token, {
             httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Solo HTTPS in produzione
             sameSite: 'Strict',
             maxAge: 7200000
-        }).json({ 
-            user: { id: user.id, name: user.name, lastName: user.lastName, email: user.email } 
+        }).json({
+            user: { id: user.id, name: user.name, lastName: user.lastName, email: user.email }
         });
 
     } catch (err) {

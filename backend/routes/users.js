@@ -103,6 +103,7 @@ router.patch('/password', passwordChangeLimiter, async (req, res) => {
     const token = jwt.sign({ id: req.user.id }, process.env.JWT_SECRET, { expiresIn: '2h' });
     res.cookie('access_token', token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // Solo HTTPS in produzione
       sameSite: 'Strict',
       maxAge: 7200000,
     });
