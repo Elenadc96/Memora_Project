@@ -38,40 +38,46 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ error: 'PASSWORD_WEAK' });
     }
 
+    const conn = await db.getConnection();
     try {
+        await conn.beginTransaction();
+
         // Controllo preventivo: l'utente esiste già?
-        const [existing] = await db.query('SELECT id FROM utenti WHERE email = ?', [email]);
+        const [existing] = await conn.query('SELECT id FROM utenti WHERE email = ?', [email]);
         if (existing.length > 0) {
+            await conn.rollback();
             return res.status(400).json({ error: "EMAIL_ALREADY_REGISTERED" });
         }
 
-        // Hashing della password (sicurezza richiesta dalle specifiche)
         const hashedPassword = await bcrypt.hash(password, 10);
         const initialSettings = settings || {};
 
         const sql = 'INSERT INTO utenti (email, password_hash, name, lastName, settings) VALUES (?, ?, ?, ?, ?)';
-        const [result] = await db.query(sql, [email, hashedPassword, name, lastName, JSON.stringify(initialSettings)]);
+        const [result] = await conn.query(sql, [email, hashedPassword, name, lastName, JSON.stringify(initialSettings)]);
 
         // Riga punti/streak per il ranking, così il nuovo utente compare
         // subito in classifica (con 0 punti) invece di esserne escluso.
-        await db.query('INSERT INTO points (user_id) VALUES (?)', [result.insertId]);
+        // Eseguita nella stessa transazione: se fallisce, l'utente non viene creato.
+        await conn.query('INSERT INTO points (user_id) VALUES (?)', [result.insertId]);
 
-        // Creazione Token JWT [3, 4]
+        await conn.commit();
+
         const token = jwt.sign({ id: result.insertId, email }, process.env.JWT_SECRET, { expiresIn: '2h' });
-
-        // FONDAMENTALE: Invia l'oggetto user al frontend per evitare il pop-up di errore
         const user = { id: result.insertId, email, name, lastName, settings: initialSettings };
 
         res.cookie('access_token', token, {
-            httpOnly: true, // Sicurezza XSS
-            secure: process.env.NODE_ENV === 'production', // Solo HTTPS in produzione
-            sameSite: 'Strict', // Sicurezza CSRF
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
             maxAge: 7200000
         }).status(201).json({ message: "Registrazione completata", user });
 
     } catch (err) {
+        await conn.rollback();
         console.error("ERRORE DURANTE LA REGISTRAZIONE:", err);
         res.status(500).json({ error: "SERVER_ERROR" });
+    } finally {
+        conn.release();
     }
 });
 
