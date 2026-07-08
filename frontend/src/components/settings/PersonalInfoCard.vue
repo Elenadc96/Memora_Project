@@ -114,6 +114,7 @@ import { defineComponent } from 'vue'
 import { UserRound, KeyRound, ChevronDown, Pencil } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import { showSaveError, apiErrorMessage } from '@/utils/notify'
+import { isValidPassword } from '@/utils/password'
 
 export default defineComponent({
   name: 'PersonalInfoCard',
@@ -182,8 +183,8 @@ export default defineComponent({
         this.passwordError = this.$t('settings.personal_data.password_mismatch')
         return
       }
-      if (this.passwordForm.newPassword.length < 8) {
-        this.passwordError = this.$t('settings.personal_data.password_too_short')
+      if (!isValidPassword(this.passwordForm.newPassword)) {
+        this.passwordError = this.$t('errors.PASSWORD_WEAK')
         return
       }
 

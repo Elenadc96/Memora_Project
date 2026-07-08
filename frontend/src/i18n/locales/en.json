@@ -7,7 +7,11 @@
     "title": "Create account",
     "submit": "Create account",
     "success_title": "Registration complete!",
-    "success_text": "You can now log in."
+    "success_text": "You can now log in.",
+    "pwd_min_length": "At least 8 characters",
+    "pwd_uppercase": "At least one uppercase letter",
+    "pwd_lowercase": "At least one lowercase letter",
+    "pwd_number": "At least one number"
   },
   "login": {
     "title": "MEMORA",
@@ -281,6 +285,7 @@
     "FLASHCARD_QUESTION_ANSWER_REQUIRED": "Question and answer are required.",
     "FLASHCARD_NOT_FOUND": "Flashcard not found.",
     "SESSION_FIELDS_REQUIRED": "subjectId and lessonId are required.",
-    "SERVER_ERROR": "An error occurred."
+    "SERVER_ERROR": "An error occurred.",
+    "PASSWORD_WEAK": "Password must be at least 8 characters and include an uppercase letter, a lowercase letter, and a number."
   }
 }

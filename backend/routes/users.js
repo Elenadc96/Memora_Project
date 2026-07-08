@@ -5,6 +5,7 @@ const jwt      = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const db       = require('../config/db');
+const { isValidPassword } = require('../utils/validators');
 
 // NOTA su { error: 'CODICE' }: i campi `error` in questo file sono codici
 // stabili (es. 'PASSWORD_WRONG_CURRENT'), non frasi. Il frontend li traduce
@@ -82,8 +83,8 @@ router.patch('/password', passwordChangeLimiter, async (req, res) => {
     return res.status(400).json({ error: 'PASSWORD_FIELDS_REQUIRED' });
   }
 
-  if (newPassword.length < 8) {
-    return res.status(400).json({ error: 'PASSWORD_TOO_SHORT' });
+  if (!isValidPassword(newPassword)) {
+    return res.status(400).json({ error: 'PASSWORD_WEAK' });
   }
 
   try {

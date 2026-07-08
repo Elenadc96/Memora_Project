@@ -34,6 +34,21 @@
           <div class="space-y-1">
             <label class="block text-sm text-primary dark:text-on-surface">{{ $t('login.password') }}</label>
             <input v-model="form.password" type="password" required class="input-field" />
+            <!-- Requisiti visivi aggiornati in tempo reale mentre si digita -->
+            <ul v-if="form.password" class="mt-2 space-y-1 text-xs pl-1">
+              <li :class="passwordChecks.length ? 'text-green-600 dark:text-green-400' : 'text-text-muted dark:text-on-surface/50'">
+                {{ passwordChecks.length ? '✓' : '○' }} {{ $t('register.pwd_min_length') }}
+              </li>
+              <li :class="passwordChecks.uppercase ? 'text-green-600 dark:text-green-400' : 'text-text-muted dark:text-on-surface/50'">
+                {{ passwordChecks.uppercase ? '✓' : '○' }} {{ $t('register.pwd_uppercase') }}
+              </li>
+              <li :class="passwordChecks.lowercase ? 'text-green-600 dark:text-green-400' : 'text-text-muted dark:text-on-surface/50'">
+                {{ passwordChecks.lowercase ? '✓' : '○' }} {{ $t('register.pwd_lowercase') }}
+              </li>
+              <li :class="passwordChecks.number ? 'text-green-600 dark:text-green-400' : 'text-text-muted dark:text-on-surface/50'">
+                {{ passwordChecks.number ? '✓' : '○' }} {{ $t('register.pwd_number') }}
+              </li>
+            </ul>
           </div>
 
           <div class="space-y-1">
@@ -64,6 +79,7 @@ import { defineComponent } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { apiErrorMessage, swalTheme } from '@/utils/notify'
+import { isValidPassword } from '@/utils/password'
 
 export default defineComponent({
   name: 'RegisterView',
@@ -72,10 +88,29 @@ export default defineComponent({
       form: { name: '', lastName: '', email: '', password: '', confirmPassword: '' },
     }
   },
+  computed: {
+    passwordChecks() {
+      const p = this.form.password
+      return {
+        length:    p.length >= 8,
+        uppercase: /[A-Z]/.test(p),
+        lowercase: /[a-z]/.test(p),
+        number:    /[0-9]/.test(p),
+      }
+    },
+    passwordValid(): boolean {
+      const c = this.passwordChecks
+      return c.length && c.uppercase && c.lowercase && c.number
+    },
+  },
   methods: {
     async handleSubmit(): Promise<void> {
+      if (!this.passwordValid) {
+        Swal.fire({ ...swalTheme(), icon: 'error', title: 'Errore', text: this.$t('errors.PASSWORD_WEAK') })
+        return
+      }
       if (this.form.password !== this.form.confirmPassword) {
-        Swal.fire({ ...swalTheme(), icon: 'error', title: 'Errore', text: 'Le password non coincidono' })
+        Swal.fire({ ...swalTheme(), icon: 'error', title: 'Errore', text: this.$t('settings.personal_data.password_mismatch') })
         return
       }
 
