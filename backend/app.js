@@ -34,12 +34,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api', require('./routes/api'));
 
 app.use('/api/utenti', verifyToken, require('./routes/users'));
-app.use('/api/subject', verifyToken, require('./routes/subject'));
-app.use('/api/lessons', verifyToken, require('./routes/lessons'));
-app.use('/api/flashcard', verifyToken, require('./routes/flashcards'));
-app.use('/api/sessioni', verifyToken, require('./routes/sessioni'));
 app.use('/api/badge', verifyToken, require('./routes/badge'));
-app.use('/api/points', verifyToken, require('./routes/points'));
 
 // Gestione errori 404 in JSON per le API [User Context]
 app.use('*', (req, res) => {
