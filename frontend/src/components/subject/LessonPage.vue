@@ -90,12 +90,7 @@
           class="input-field pl-9"
         />
       </div>
-      <select v-model="filterStatus" class="input-field w-44">
-        <option value="all">{{ $t('lesson.filter_all') }}</option>
-        <option value="mastered">{{ $t('lesson.filter_mastered') }}</option>
-        <option value="learning">{{ $t('lesson.filter_learning') }}</option>
-        <option value="review">{{ $t('lesson.filter_review') }}</option>
-      </select>
+      <BaseSelect v-model="filterStatus" class="w-44" :options="filterOptions" />
     </div>
 
     <!-- ── Lista flashcard ───────────────────────────────────────────── -->
@@ -142,6 +137,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ArrowLeft, BookOpen, CheckCircle2, Target, Search, Plus, Play } from 'lucide-vue-next'
+import { useTranslation } from 'i18next-vue'
 import { useFlashcardStore } from '@/stores/flashcards'
 import type { Lesson } from '@/types'
 import type { StudyFlashcard, CardStatus } from '@/data/subjects'
@@ -152,6 +148,7 @@ import StudySession from './StudySession.vue'
 import CreateFlashcardDialog from './CreateFlashcardDialog.vue'
 import EditFlashcardDialog from './EditFlashcardDialog.vue'
 import FlashcardCardModal from './FlashcardCardModal.vue'
+import BaseSelect from '@/components/common/BaseSelect.vue'
 
 const props = defineProps<{
   lesson: Lesson
@@ -165,9 +162,17 @@ const emit = defineEmits<{
 }>()
 
 const store = useFlashcardStore()
+const { t } = useTranslation()
 
 const searchQuery = ref('')
 const filterStatus = ref('all')
+
+const filterOptions = computed(() => [
+  { value: 'all', label: t('lesson.filter_all') },
+  { value: 'mastered', label: t('lesson.filter_mastered') },
+  { value: 'learning', label: t('lesson.filter_learning') },
+  { value: 'review', label: t('lesson.filter_review') },
+])
 const createFlashcardOpen = ref(false)
 const sessionOpen = ref(false)
 const editTarget = ref<StudyFlashcard | null>(null)

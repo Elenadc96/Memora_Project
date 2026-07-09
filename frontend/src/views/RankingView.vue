@@ -1,187 +1,185 @@
 <template>
-  <main class="min-h-full bg-page p-6 md:p-8">
-    <div class="max-w-6xl mx-auto">
+  <main class="flex-1 overflow-y-auto p-8">
 
-      <!-- Header -->
-      <div class="mb-8">
-        <h2 class="page-title">{{ $t('ranking.title') }}</h2>
-        <p class="page-subtitle">{{ $t('ranking.subtitle') }}</p>
-      </div>
+    <!-- Header -->
+    <div class="mb-8">
+      <h2 class="page-title">{{ $t('ranking.title') }}</h2>
+      <p class="page-subtitle">{{ $t('ranking.subtitle') }}</p>
+    </div>
 
-      <!-- Loading -->
-      <div v-if="store.loading" class="flex items-center justify-center h-64">
-        <div class="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-      </div>
+    <!-- Loading -->
+    <div v-if="store.loading" class="flex items-center justify-center h-64">
+      <div class="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+    </div>
 
-      <p v-else-if="store.error" class="text-sm text-red-500">{{ $t('common.error') }}</p>
+    <p v-else-if="store.error" class="text-sm text-red-500">{{ $t('common.error') }}</p>
 
-      <template v-else>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <template v-else>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          <!-- Classifica globale -->
-          <div class="card lg:col-span-2 rounded-2xl p-6">
-            <h3 class="font-semibold text-primary dark:text-on-surface flex items-center gap-2 mb-5">
-              <Trophy class="w-5 h-5 text-amber-500" />
-              {{ $t('ranking.global_title') }}
-            </h3>
+        <!-- Classifica globale -->
+        <div class="card lg:col-span-2 rounded-2xl p-6">
+          <h3 class="font-semibold text-primary dark:text-on-surface flex items-center gap-2 mb-5">
+            <Trophy class="w-5 h-5 text-amber-500" />
+            {{ $t('ranking.global_title') }}
+          </h3>
 
-            <div class="space-y-2">
-              <div
-                v-for="user in store.leaderboard"
-                :key="user.userId"
-                :class="[
-                  'flex items-center gap-4 p-4 rounded-xl transition-colors',
-                  user.isCurrentUser
-                    ? 'bg-primary/10 border-2 border-primary'
-                    : 'bg-accent/5 hover:bg-accent/10'
-                ]"
-              >
-                <!-- Rank icon -->
-                <div class="w-8 flex items-center justify-center flex-shrink-0">
-                  <Crown v-if="user.rank === 1" class="w-5 h-5 text-amber-400" />
-                  <Medal v-else-if="user.rank === 2" class="w-5 h-5 text-gray-400" />
-                  <Medal v-else-if="user.rank === 3" class="w-5 h-5 text-amber-600" />
-                  <span v-else class="text-sm text-text-muted font-medium">#{{ user.rank }}</span>
-                </div>
-
-                <!-- Avatar -->
-                <div
-                  class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                  :style="{ backgroundColor: avatarColor(user.userId) }"
-                >{{ initials(user.name) }}</div>
-
-                <!-- Nome + punti -->
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 font-medium text-primary dark:text-on-surface">
-                    <span class="truncate">{{ user.name }}</span>
-                    <span
-                      v-if="user.isCurrentUser"
-                      class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 flex-shrink-0"
-                    >{{ $t('ranking.you_label') }}</span>
-                  </div>
-                  <div class="text-sm text-text-muted">{{ $t('ranking.points_label', { count: formatPoints(user.points) }) }}</div>
-                </div>
-
-                <!-- Streak badge -->
-                <div class="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg flex-shrink-0">
-                  <Flame class="w-4 h-4 text-amber-500" />
-                  <span class="text-sm font-medium text-amber-600 dark:text-amber-400">{{ $t('ranking.streak_days', { count: user.streak }) }}</span>
-                </div>
-              </div>
-
-              <p v-if="store.leaderboard.length === 0" class="text-sm text-text-muted text-center py-6">
-                {{ $t('common.error') }}
-              </p>
-            </div>
-
-            <!-- Banner streak utente -->
-            <div class="mt-5 p-4 bg-primary/10 rounded-xl border border-primary/20 flex items-start gap-3">
-              <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                <Flame class="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p class="font-medium text-primary dark:text-on-surface">{{ $t('ranking.streak_motivation', { count: myStats.streak }) }}</p>
-                <p class="text-sm text-text-muted mt-0.5">
-                  <template v-if="daysToMarathon > 0">
-                    {{ $t('ranking.streak_hint', { remaining: daysToMarathon, badge: marathonerName }) }}
-                  </template>
-                  <template v-else>
-                    {{ $t('ranking.streak_hint_done', { badge: marathonerName }) }}
-                  </template>
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Statistiche personali -->
-          <div class="card rounded-2xl p-6 h-fit">
-            <h3 class="font-semibold text-primary dark:text-on-surface mb-4">{{ $t('ranking.your_stats') }}</h3>
-
-            <div class="text-center p-5 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white mb-5">
-              <p class="text-sm opacity-80 mb-1">{{ $t('ranking.position') }}</p>
-              <p class="text-4xl font-bold">#{{ myRank ?? '–' }}</p>
-            </div>
-
-            <div class="space-y-3">
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-text-muted">{{ $t('ranking.total_points') }}</span>
-                <span class="font-medium text-primary dark:text-on-surface">{{ formatPoints(myStats.totalPoints) }}</span>
-              </div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-text-muted">{{ $t('ranking.current_streak') }}</span>
-                <span class="font-medium text-primary dark:text-on-surface flex items-center gap-1">
-                  <Flame class="w-4 h-4 text-amber-500" />
-                  {{ $t('ranking.streak_days', { count: myStats.streak }) }}
-                </span>
-              </div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-text-muted">{{ $t('ranking.badges_unlocked') }}</span>
-                <span class="font-medium text-primary dark:text-on-surface">{{ unlockedCount }}/{{ totalCount }}</span>
-              </div>
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-text-muted">{{ $t('ranking.cards_completed') }}</span>
-                <span class="font-medium text-primary dark:text-on-surface">{{ myStats.cardsCompleted }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Collezione badge -->
-        <div class="mt-6 card rounded-2xl p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="font-semibold text-primary dark:text-on-surface flex items-center gap-2">
-              <Award class="w-5 h-5 text-accent" />
-              {{ $t('ranking.badges_title') }}
-            </h3>
-            <span class="text-xs px-3 py-1 rounded-full bg-accent/10 text-primary dark:text-on-surface">
-              {{ $t('ranking.badges_count', { unlocked: unlockedCount, total: totalCount }) }}
-            </span>
-          </div>
-
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="space-y-2">
             <div
-              v-for="badge in displayBadges"
-              :key="badge.id"
+              v-for="user in store.leaderboard"
+              :key="user.userId"
               :class="[
-                'card p-5 rounded-xl text-center',
-                badge.unlocked ? 'hover:shadow-lg transition-shadow' : 'opacity-60'
+                'flex items-center gap-4 p-4 rounded-xl transition-colors',
+                user.isCurrentUser
+                  ? 'bg-primary/10 border-2 border-primary'
+                  : 'bg-accent/5 hover:bg-accent/10'
               ]"
             >
-              <div
-                class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
-                :class="[badge.color, !badge.unlocked && 'grayscale']"
-              >
-                <component :is="badge.iconComponent" class="w-8 h-8 text-white" />
+              <!-- Rank icon -->
+              <div class="w-8 flex items-center justify-center flex-shrink-0">
+                <Crown v-if="user.rank === 1" class="w-5 h-5 text-amber-400" />
+                <Medal v-else-if="user.rank === 2" class="w-5 h-5 text-gray-400" />
+                <Medal v-else-if="user.rank === 3" class="w-5 h-5 text-amber-600" />
+                <span v-else class="text-sm text-text-muted font-medium">#{{ user.rank }}</span>
               </div>
 
-              <p class="font-medium text-primary dark:text-on-surface text-sm mb-1">{{ badge.name }}</p>
-              <p class="text-xs text-text-muted mb-3 leading-relaxed">{{ badge.description }}</p>
+              <!-- Avatar -->
+              <div
+                class="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                :style="{ backgroundColor: avatarColor(user.userId) }"
+              >{{ initials(user.name) }}</div>
 
-              <span
-                v-if="badge.unlocked"
-                class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-              >
-                ✓ {{ badge.unlockedDate ? $t('ranking.unlocked_on', { date: formatDate(badge.unlockedDate) }) : '' }}
+              <!-- Nome + punti -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 font-medium text-primary dark:text-on-surface">
+                  <span class="truncate">{{ user.name }}</span>
+                  <span
+                    v-if="user.isCurrentUser"
+                    class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 flex-shrink-0"
+                  >{{ $t('ranking.you_label') }}</span>
+                </div>
+                <div class="text-sm text-text-muted">{{ $t('ranking.points_label', { count: formatPoints(user.points) }) }}</div>
+              </div>
+
+              <!-- Streak badge -->
+              <div class="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg flex-shrink-0">
+                <Flame class="w-4 h-4 text-amber-500" />
+                <span class="text-sm font-medium text-amber-600 dark:text-amber-400">{{ $t('ranking.streak_days', { count: user.streak }) }}</span>
+              </div>
+            </div>
+
+            <p v-if="store.leaderboard.length === 0" class="text-sm text-text-muted text-center py-6">
+              {{ $t('common.error') }}
+            </p>
+          </div>
+
+          <!-- Banner streak utente -->
+          <div class="mt-5 p-4 bg-primary/10 rounded-xl border border-primary/20 flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+              <Flame class="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p class="font-medium text-primary dark:text-on-surface">{{ $t('ranking.streak_motivation', { count: myStats.streak }) }}</p>
+              <p class="text-sm text-text-muted mt-0.5">
+                <template v-if="daysToMarathon > 0">
+                  {{ $t('ranking.streak_hint', { remaining: daysToMarathon, badge: marathonerName }) }}
+                </template>
+                <template v-else>
+                  {{ $t('ranking.streak_hint_done', { badge: marathonerName }) }}
+                </template>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Statistiche personali -->
+        <div class="card rounded-2xl p-6 h-fit">
+          <h3 class="font-semibold text-primary dark:text-on-surface mb-4">{{ $t('ranking.your_stats') }}</h3>
+
+          <div class="text-center p-5 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white mb-5">
+            <p class="text-sm opacity-80 mb-1">{{ $t('ranking.position') }}</p>
+            <p class="text-4xl font-bold">#{{ myRank ?? '–' }}</p>
+          </div>
+
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-text-muted">{{ $t('ranking.total_points') }}</span>
+              <span class="font-medium text-primary dark:text-on-surface">{{ formatPoints(myStats.totalPoints) }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-text-muted">{{ $t('ranking.current_streak') }}</span>
+              <span class="font-medium text-primary dark:text-on-surface flex items-center gap-1">
+                <Flame class="w-4 h-4 text-amber-500" />
+                {{ $t('ranking.streak_days', { count: myStats.streak }) }}
               </span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-text-muted">{{ $t('ranking.badges_unlocked') }}</span>
+              <span class="font-medium text-primary dark:text-on-surface">{{ unlockedCount }}/{{ totalCount }}</span>
+            </div>
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-text-muted">{{ $t('ranking.cards_completed') }}</span>
+              <span class="font-medium text-primary dark:text-on-surface">{{ myStats.cardsCompleted }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <div v-else class="w-full">
-                <div class="flex justify-between text-xs text-text-muted mb-1.5">
-                  <span>{{ $t('ranking.progress_label') }}</span>
-                  <span>{{ badge.progress }}/{{ badge.total }}</span>
-                </div>
-                <div class="h-1.5 rounded-full bg-accent/20 overflow-hidden">
-                  <div
-                    class="h-full rounded-full bg-accent transition-all duration-700"
-                    :style="{ width: badgeProgressPct(badge) + '%' }"
-                  />
-                </div>
+      <!-- Collezione badge -->
+      <div class="mt-6 card rounded-2xl p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="font-semibold text-primary dark:text-on-surface flex items-center gap-2">
+            <Award class="w-5 h-5 text-accent" />
+            {{ $t('ranking.badges_title') }}
+          </h3>
+          <span class="text-xs px-3 py-1 rounded-full bg-accent/10 text-primary dark:text-on-surface">
+            {{ $t('ranking.badges_count', { unlocked: unlockedCount, total: totalCount }) }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div
+            v-for="badge in displayBadges"
+            :key="badge.id"
+            :class="[
+              'card p-5 rounded-xl text-center',
+              badge.unlocked ? 'hover:shadow-lg transition-shadow' : 'opacity-60'
+            ]"
+          >
+            <div
+              class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3"
+              :class="[badge.color, !badge.unlocked && 'grayscale']"
+            >
+              <component :is="badge.iconComponent" class="w-8 h-8 text-white" />
+            </div>
+
+            <p class="font-medium text-primary dark:text-on-surface text-sm mb-1">{{ badge.name }}</p>
+            <p class="text-xs text-text-muted mb-3 leading-relaxed">{{ badge.description }}</p>
+
+            <span
+              v-if="badge.unlocked"
+              class="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            >
+              ✓ {{ badge.unlockedDate ? $t('ranking.unlocked_on', { date: formatDate(badge.unlockedDate) }) : '' }}
+            </span>
+
+            <div v-else class="w-full">
+              <div class="flex justify-between text-xs text-text-muted mb-1.5">
+                <span>{{ $t('ranking.progress_label') }}</span>
+                <span>{{ badge.progress }}/{{ badge.total }}</span>
+              </div>
+              <div class="h-1.5 rounded-full bg-accent/20 overflow-hidden">
+                <div
+                  class="h-full rounded-full bg-accent transition-all duration-700"
+                  :style="{ width: badgeProgressPct(badge) + '%' }"
+                />
               </div>
             </div>
           </div>
         </div>
-      </template>
+      </div>
+    </template>
 
-    </div>
   </main>
 </template>
 

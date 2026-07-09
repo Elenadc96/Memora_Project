@@ -567,7 +567,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
           JSON_EXTRACT(result, '$.almost') +
           JSON_EXTRACT(result, '$.forgot')
         ), 0) AS studiedToday,
-        COALESCE(SUM(session_duration), 0) AS studyTimeMinutes
+        COALESCE(SUM(session_duration), 0) AS studyTimeSeconds
       FROM sessioni
       WHERE user_id = ? AND DATE(created_at) = CURDATE() AND result IS NOT NULL
     `, [userId]);
@@ -654,7 +654,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
     res.json({
       totalFlashcards:  Number(totalFlashcards),
       studiedToday:     Number(todayRow.studiedToday),
-      studyTimeMinutes: Number(todayRow.studyTimeMinutes),
+      studyTimeSeconds: Number(todayRow.studyTimeSeconds),
       successRate30d:   rateRow.successRate30d  != null ? Number(rateRow.successRate30d)  : null,
       successRateAll:   rateRow.successRateAll  != null ? Number(rateRow.successRateAll)  : null,
       streak:           pointsRow ? Number(pointsRow.streak) : 0,

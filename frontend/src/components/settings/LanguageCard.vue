@@ -11,26 +11,19 @@
       {{ $t('settings.language') }}
     </h3>
 
-    <select
-      class="input-field max-w-xs"
-      :value="uiStore.language"
-      @change="onLanguageChange"
-    >
-      <option
-        v-for="lang in availableLanguages"
-        :key="lang"
-        :value="lang"
-        class="bg-white text-primary dark:bg-surface dark:text-on-surface"
-      >
-        {{ languageLabel(lang) }}
-      </option>
-    </select>
+    <BaseSelect
+      class="max-w-xs"
+      :model-value="uiStore.language"
+      :options="languageOptions"
+      @update:model-value="onLanguageChange"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { Globe } from 'lucide-vue-next'
+import BaseSelect from '@/components/common/BaseSelect.vue'
 import { useUIStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { i18next } from '@/i18n'
@@ -46,7 +39,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 
 export default defineComponent({
   name: 'LanguageCard',
-  components: { Globe },
+  components: { Globe, BaseSelect },
 
   setup() {
     const uiStore = useUIStore()
@@ -59,6 +52,10 @@ export default defineComponent({
       const supported = (i18next.options.supportedLngs || []) as string[]
       return supported.filter(lang => lang !== 'cimode')
     },
+
+    languageOptions(): { value: string; label: string }[] {
+      return this.availableLanguages.map(lang => ({ value: lang, label: this.languageLabel(lang) }))
+    },
   },
 
   methods: {
@@ -66,21 +63,17 @@ export default defineComponent({
       return LANGUAGE_NAMES[lang] || lang.toUpperCase()
     },
 
-    async onLanguageChange(event: Event): Promise<void> {
-      const select = event.target as HTMLSelectElement
-      const value = select.value as Language
-
+    async onLanguageChange(value: string): Promise<void> {
       // Settings è un blob unico: va inviato completo (tema + lingua),
       // non solo il campo che è cambiato.
-      const settings = { ...this.uiStore.currentSettings, language: value }
+      const settings = { ...this.uiStore.currentSettings, language: value as Language }
       try {
         await this.authStore.updateProfile({ settings })
         // La lingua viene applicata in UI solo dopo che l'API ha confermato il salvataggio.
-        await this.uiStore.setLanguage(value)
+        // Il BaseSelect mostra sempre uiStore.language, quindi se la chiamata
+        // fallisce e non aggiorniamo lo store non serve alcun rollback visivo.
+        await this.uiStore.setLanguage(value as Language)
       } catch {
-        // La select mostra già visivamente il nuovo valore scelto: la
-        // riportiamo a quello corrente perché il salvataggio non è andato a buon fine.
-        select.value = this.uiStore.language
         showSaveError()
       }
     },

@@ -10,7 +10,7 @@ export interface WeeklyActivity {
 export interface DashboardData {
   totalFlashcards: number
   studiedToday: number
-  studyTimeMinutes: number
+  studyTimeSeconds: number
   successRate30d: number | null
   successRateAll: number | null
   streak: number

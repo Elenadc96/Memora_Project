@@ -118,8 +118,10 @@ onMounted(async () => {
   ])
 })
 
-function formatStudyTime(minutes: number): string {
-  if (minutes === 0) return '0m'
+function formatStudyTime(seconds: number): string {
+  if (seconds === 0) return '0m'
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
   if (minutes < 60) return `${minutes}m`
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
@@ -154,7 +156,7 @@ const statCards = computed(() => {
     },
     {
       label: t('stats.study_time'),
-      value: data ? formatStudyTime(data.studyTimeMinutes) : '–',
+      value: data ? formatStudyTime(data.studyTimeSeconds) : '–',
       trend: t('dashboard.study_time_trend'),
       icon: Clock,
       iconBg: 'bg-yellow-500/10 dark:bg-yellow-400/15',

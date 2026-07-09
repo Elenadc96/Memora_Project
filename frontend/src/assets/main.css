@@ -83,6 +83,16 @@
            dark:bg-page dark:text-on-surface dark:border-border;
   }
 
+  /* Select nativa: nasconde la freccia di sistema (che il browser disegna
+     incollata al bordo destro, spesso illeggibile in dark mode) e lascia
+     spazio a destra per l'icona ChevronDown disegnata sopra nel template. */
+  .select-field {
+    @apply w-full border border-border rounded-md pl-3 pr-9 py-2 text-primary bg-white
+           focus:outline-none focus:ring-2 focus:ring-accent
+           dark:bg-page dark:text-on-surface dark:border-border
+           appearance-none cursor-pointer;
+  }
+
   .card {
     @apply bg-white dark:bg-surface rounded-xl shadow-sm p-4;
     border: 1px solid var(--color-accent-30);

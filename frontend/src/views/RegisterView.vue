@@ -90,7 +90,6 @@ import { defineComponent } from 'vue'
 import axios from 'axios'
 import Swal from 'sweetalert2'
 import { apiErrorMessage, swalTheme } from '@/utils/notify'
-import { isValidPassword } from '@/utils/password'
 
 export default defineComponent({
   name: 'RegisterView',
