@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('../config/db');
+const { userOwnsLesson } = require('../helpers/ownership');
 
 // Montato in app.js su /api/lessons con verifyToken a livello di mount.
 //
@@ -21,13 +22,9 @@ const db      = require('../config/db');
 router.patch('/:id', async (req, res) => {
   try {
     // Risale da lesson a subject per verificare che la lezione sia dell'utente loggato
-    const [own] = await db.query(
-      `SELECT l.id FROM lessons l
-       JOIN subject s ON s.id = l.subject_id
-       WHERE l.id = ? AND s.user_id = ?`,
-      [req.params.id, req.user.id]
-    );
-    if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+    if (!(await userOwnsLesson(req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+    }
 
     const { status, last_study, last_lesson_duration } = req.body;
     await db.query(
@@ -55,13 +52,9 @@ router.patch('/:id', async (req, res) => {
 // 3. Si cancellano le flashcard orfane con quei id
 router.delete('/:id', async (req, res) => {
   try {
-    const [own] = await db.query(
-      `SELECT l.id FROM lessons l
-       JOIN subject s ON s.id = l.subject_id
-       WHERE l.id = ? AND s.user_id = ?`,
-      [req.params.id, req.user.id]
-    );
-    if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+    if (!(await userOwnsLesson(req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+    }
 
     // 1. Trova le flashcard della lezione prima che il CASCADE le scolleghi
     const [fcRows] = await db.query(
@@ -89,13 +82,9 @@ router.delete('/:id', async (req, res) => {
 // Il campo content (JSON) viene spacchettato in question/answer per il frontend
 router.get('/:id/flashcards', async (req, res) => {
   try {
-    const [own] = await db.query(
-      `SELECT l.id FROM lessons l
-       JOIN subject s ON s.id = l.subject_id
-       WHERE l.id = ? AND s.user_id = ?`,
-      [req.params.id, req.user.id]
-    );
-    if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+    if (!(await userOwnsLesson(req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+    }
 
     const [rows] = await db.query(`
       SELECT f.id, f.content, f.difficult, f.created_at, fl.status
@@ -125,13 +114,9 @@ router.get('/:id/flashcards', async (req, res) => {
 // POST /api/lessons/:id/flashcards — crea flashcard in una lezione
 router.post('/:id/flashcards', async (req, res) => {
   try {
-    const [own] = await db.query(
-      `SELECT l.id FROM lessons l
-       JOIN subject s ON s.id = l.subject_id
-       WHERE l.id = ? AND s.user_id = ?`,
-      [req.params.id, req.user.id]
-    );
-    if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+    if (!(await userOwnsLesson(req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+    }
 
     const { question, answer, difficult = 0 } = req.body;
     if (!question?.trim() || !answer?.trim()) {

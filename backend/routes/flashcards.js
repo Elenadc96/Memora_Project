@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('../config/db');
+const { userOwnsFlashcard } = require('../helpers/ownership');
 
 // Montato in app.js su /api/flashcards con verifyToken a livello di mount.
 //
@@ -17,15 +18,9 @@ router.put('/:id', async (req, res) => {
     // Una flashcard non ha subject_id/user_id diretto: l'ownership si
     // verifica risalendo alla lezione (via flashcard_lesson) e da lì alla
     // materia dell'utente loggato.
-    const [own] = await db.query(
-      `SELECT f.id FROM flashcard f
-       JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
-       JOIN lessons l           ON l.id = fl.lesson_id
-       JOIN subject s           ON s.id = l.subject_id
-       WHERE f.id = ? AND s.user_id = ?`,
-      [req.params.id, req.user.id]
-    );
-    if (!own.length) return res.status(404).json({ error: 'FLASHCARD_NOT_FOUND' });
+    if (!(await userOwnsFlashcard(req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'FLASHCARD_NOT_FOUND' });
+    }
 
     const { question, answer, difficult } = req.body;
     if (!question?.trim() || !answer?.trim()) {
@@ -51,15 +46,9 @@ router.put('/:id', async (req, res) => {
 // DELETE /api/flashcards/:id — elimina flashcard
 router.delete('/:id', async (req, res) => {
   try {
-    const [own] = await db.query(
-      `SELECT f.id FROM flashcard f
-       JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
-       JOIN lessons l           ON l.id = fl.lesson_id
-       JOIN subject s           ON s.id = l.subject_id
-       WHERE f.id = ? AND s.user_id = ?`,
-      [req.params.id, req.user.id]
-    );
-    if (!own.length) return res.status(404).json({ error: 'FLASHCARD_NOT_FOUND' });
+    if (!(await userOwnsFlashcard(req.user.id, req.params.id))) {
+      return res.status(404).json({ error: 'FLASHCARD_NOT_FOUND' });
+    }
 
     await db.query('DELETE FROM flashcard WHERE id = ?', [req.params.id]);
     res.json({ success: true });

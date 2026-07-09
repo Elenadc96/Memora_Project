@@ -2,6 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../config/db');
 const { recordSessionCompletion } = require('../services/gamificationService');
+const { userOwnsLesson } = require('../helpers/ownership');
 
 // Montato in app.js su /api/sessions con verifyToken a livello di mount.
 //
@@ -46,13 +47,9 @@ router.post('/', async (req, res) => {
   // subjectId/lessonId arrivano dal body: senza questo controllo un utente
   // potrebbe salvare una sessione (e far scattare punti/streak/badge) su una
   // lezione di un altro utente semplicemente inviando il suo id numerico.
-  const [own] = await db.query(
-    `SELECT l.id FROM lessons l
-     JOIN subject s ON s.id = l.subject_id
-     WHERE l.id = ? AND l.subject_id = ? AND s.user_id = ?`,
-    [lessonId, subjectId, userId]
-  );
-  if (!own.length) return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+  if (!(await userOwnsLesson(userId, lessonId, subjectId))) {
+    return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
+  }
 
   const knew   = results.filter(r => r.rating === 'knew').length;
   const almost = results.filter(r => r.rating === 'almost').length;
