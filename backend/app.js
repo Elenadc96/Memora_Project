@@ -30,9 +30,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ROTTE DI AUTENTICAZIONE
 app.use('/api/auth', require('./routes/auth'));
 
-// ROTTE API PRINCIPALI (subjects, lessons, flashcards)
-app.use('/api', require('./routes/api'));
+// /api/status (pubblico, health check) + /api/dashboard e /api/ranking
+// (protetti per-rotta dentro il router, perché condividono il mount con status)
+app.use('/api', require('./routes/stats'));
 
+// Rotte per risorsa: verifyToken applicato qui al mount, una volta sola —
+// tutte le rotte dentro questi router hanno già req.user valorizzato.
+app.use('/api/subjects', verifyToken, require('./routes/subjects'));
+app.use('/api/lessons', verifyToken, require('./routes/lessons'));
+app.use('/api/flashcards', verifyToken, require('./routes/flashcards'));
+app.use('/api/sessions', verifyToken, require('./routes/sessions'));
 app.use('/api/utenti', verifyToken, require('./routes/users'));
 app.use('/api/badge', verifyToken, require('./routes/badge'));
 
