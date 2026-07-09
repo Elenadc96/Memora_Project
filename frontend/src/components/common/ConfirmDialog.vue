@@ -28,8 +28,8 @@
       <div class="flex gap-4">
         <div class="flex-shrink-0 mt-0.5">
           <div class="w-10 h-10 rounded-full flex items-center justify-center"
-               :class="danger ? 'bg-red-100' : 'bg-amber-100'">
-            <AlertTriangle class="w-5 h-5" :class="danger ? 'text-red-600' : 'text-amber-600'" />
+               :class="danger ? 'bg-red-100 dark:bg-red-900/30' : 'bg-amber-100 dark:bg-amber-900/30'">
+            <AlertTriangle class="w-5 h-5" :class="danger ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'" />
           </div>
         </div>
         <p class="text-sm text-primary dark:text-on-surface leading-relaxed">
@@ -102,8 +102,10 @@ export default defineComponent({
   font-size: 14px;
   transition: background 0.15s, opacity 0.15s;
 }
-.btn-confirm--danger   { background: #ef4444; color: white; }
-.btn-confirm--danger:hover   { background: #dc2626; }
-.btn-confirm--warning  { background: #f59e0b; color: white; }
-.btn-confirm--warning:hover  { background: #d97706; }
+/* Colori dai token del design system (main.css), che hanno già la loro
+   variante dark; l'hover scurisce il token invece di duplicare l'esadecimale. */
+.btn-confirm--danger   { background: var(--color-danger); color: white; }
+.btn-confirm--warning  { background: var(--color-warning); color: white; }
+.btn-confirm--danger:hover,
+.btn-confirm--warning:hover  { filter: brightness(0.88); }
 </style>

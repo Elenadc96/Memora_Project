@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-import { mockSubjects, mockLessons, mockFlashcards } from '../data/mockSubjectData'
+import { toast } from 'vue-sonner'
+import { apiErrorMessage } from '@/utils/notify'
 import type { Subject, Lesson, Flashcard } from '@/types'
 
 interface FlashcardState {
@@ -72,8 +73,8 @@ export const useFlashcardStore = defineStore('flashcards', {
         const { data } = await axios.get<Subject[]>('/api/subjects')
         this.subjects = data
       } catch (e) {
-        this.error    = (e as Error).message
-        this.subjects = mockSubjects
+        this.error = apiErrorMessage(e)
+        toast.error(this.error)
       } finally {
         this.loading = false
       }
@@ -142,8 +143,10 @@ export const useFlashcardStore = defineStore('flashcards', {
       try {
         const { data } = await axios.get<Lesson[]>(`/api/subjects/${subjectId}/lessons`)
         this.lessons = data
-      } catch {
-        this.lessons = mockLessons[subjectId] ?? []
+      } catch (e) {
+        this.lessons = []
+        this.error = apiErrorMessage(e)
+        toast.error(this.error)
       } finally {
         this.loading = false
       }
@@ -190,8 +193,10 @@ export const useFlashcardStore = defineStore('flashcards', {
       try {
         const { data } = await axios.get<Flashcard[]>(`/api/lessons/${lessonId}/flashcards`)
         this.flashcardsByLesson = { ...this.flashcardsByLesson, [lessonId]: data }
-      } catch {
-        this.flashcardsByLesson = { ...this.flashcardsByLesson, [lessonId]: mockFlashcards[lessonId] ?? [] }
+      } catch (e) {
+        // La chiave non viene scritta: hasFlashcardsLoaded resta false e un
+        // prossimo accesso alla lezione ritenta il fetch.
+        toast.error(apiErrorMessage(e))
       }
     },
 

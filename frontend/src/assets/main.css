@@ -33,8 +33,9 @@
   --color-white-10:  rgba(255, 255, 255, 0.1);
   --color-white-20:  rgba(255, 255, 255, 0.2);
 
-  /* Azioni distruttive (elimina account, esci, ecc.) */
-  --color-danger: #ef4444;
+  /* Azioni distruttive (elimina account, esci, ecc.) e conferme "attenzione" */
+  --color-danger:  #ef4444;
+  --color-warning: #f59e0b;
 
   /* Palette categoriale per gli avatar della classifica: serve solo a
      distinguere visivamente utenti diversi, non fa parte della palette di
@@ -59,6 +60,7 @@
   --color-text-primary: #CAE9FF;
   --color-text-muted:   #BEE9E8;
   --color-danger:       #f87171;
+  --color-warning:      #fbbf24;
 }
 
 /* ─── Componenti riutilizzabili ───────────────────────────────────────────── */
