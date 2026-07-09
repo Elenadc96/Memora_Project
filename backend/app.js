@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const verifyToken = require('./middleware/auth');
@@ -24,8 +23,7 @@ app.use(cors({
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser()); // Necessario per leggere l'access_token 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieParser()); // Necessario per leggere l'access_token
 
 // ROTTE DI AUTENTICAZIONE
 app.use('/api/auth', require('./routes/auth'));
