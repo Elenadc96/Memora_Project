@@ -108,9 +108,21 @@
 
       <!-- Lista lezioni -->
       <template v-else-if="store.lessons.length">
-        <div class="flex flex-col gap-3">
+
+        <!-- Ricerca lezioni -->
+        <div class="relative mb-6">
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted dark:text-on-surface/40 pointer-events-none" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            :placeholder="$t('subject.search_placeholder')"
+            class="input-field pl-9"
+          />
+        </div>
+
+        <div v-if="filteredLessons.length" class="flex flex-col gap-3">
           <div
-            v-for="lesson in store.lessons"
+            v-for="lesson in filteredLessons"
             :key="lesson.id"
             class="border border-border rounded-xl p-5 hover:shadow-md cursor-pointer group
                    bg-white dark:bg-surface transition-shadow relative"
@@ -203,9 +215,20 @@
             </div>
           </div>
         </div>
+
+        <!-- Nessun risultato per la ricerca -->
+        <div
+          v-else
+          class="border-2 border-dashed border-border rounded-xl flex flex-col items-center py-16 gap-4"
+        >
+          <Search class="w-10 h-10 opacity-40 text-text-muted dark:text-on-surface/40" />
+          <p class="text-text-muted dark:text-on-surface/50 text-sm text-center">
+            {{ $t('subject.no_search_results') }}
+          </p>
+        </div>
       </template>
 
-      <!-- Stato vuoto -->
+      <!-- Stato vuoto (nessuna lezione ancora) -->
       <div
         v-else
         class="border-2 border-dashed border-border rounded-xl flex flex-col items-center py-16 gap-4"
@@ -259,7 +282,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { GraduationCap, Layers, BookOpen, Plus, Pencil, Trash2, ChevronRight, Play, X, CheckCircle2, RotateCcw } from 'lucide-vue-next'
+import { GraduationCap, Layers, BookOpen, Plus, Pencil, Trash2, ChevronRight, Play, X, CheckCircle2, RotateCcw, Search } from 'lucide-vue-next'
 import { useFlashcardStore } from '@/stores/flashcards'
 import type { Lesson } from '@/types'
 import { toast } from 'vue-sonner'
@@ -283,6 +306,9 @@ const selectedLesson = computed<Lesson | null>(() =>
   lessonId.value ? (store.lessons.find(l => l.id === lessonId.value) ?? null) : null,
 )
 
+// ── Ricerca lezioni ──────────────────────────────────────────────────────
+const searchQuery = ref('')
+
 // ── Stato dialogs ────────────────────────────────────────────────────────
 const showCreateLesson = ref(false)
 const showEditSubject = ref(false)
@@ -299,6 +325,14 @@ const subject = computed(() => store.subjects.find(s => s.id === subjectId.value
 const totalCards = computed(() =>
   store.lessons.reduce((sum, l) => sum + (l.flashcardCount ?? 0), 0),
 )
+
+const filteredLessons = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return store.lessons
+  return store.lessons.filter((l) =>
+    l.name.toLowerCase().includes(q) || (l.description ?? '').toLowerCase().includes(q),
+  )
+})
 
 const totalMastered = computed(() =>
   Object.values(lessonProgress.value).reduce((sum, p) => sum + p.mastered, 0),

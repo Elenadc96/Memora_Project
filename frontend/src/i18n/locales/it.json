@@ -96,6 +96,8 @@
     "chip_review": "da ripassare",
     "no_lessons": "Nessuna lezione ancora. Creane una per iniziare!",
     "no_flashcards": "Nessuna flashcard in questa lezione. Aggiungine una!",
+    "search_placeholder": "Cerca lezioni...",
+    "no_search_results": "Nessuna lezione trovata.",
     "start_lesson": "Inizia lezione",
     "start_lesson_disabled": "Aggiungi almeno una flashcard per iniziare la lezione",
     "tap_to_reveal": "Tocca per vedere la risposta",

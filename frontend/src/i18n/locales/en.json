@@ -96,6 +96,8 @@
     "chip_review": "to review",
     "no_lessons": "No lessons yet. Create one to get started!",
     "no_flashcards": "No flashcards in this lesson yet. Add one!",
+    "search_placeholder": "Search lessons...",
+    "no_search_results": "No lessons found.",
     "start_lesson": "Start lesson",
     "start_lesson_disabled": "Add at least one flashcard to start the lesson",
     "tap_to_reveal": "Tap to reveal answer",
