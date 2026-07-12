@@ -27,6 +27,19 @@ function nextStreak(lastStreakDate, currentStreak) {
   return 1; // gap → riparte da oggi
 }
 
+// Restituisce la streak effettiva da mostrare all'utente: se l'ultima sessione
+// è più vecchia di ieri la streak è scaduta e vale 0, anche se il DB conserva
+// ancora il valore precedente (che verrà sovrascritto alla prossima sessione).
+function effectiveStreak(streakDays, lastStreakDate) {
+  if (!lastStreakDate || !streakDays) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const last = new Date(lastStreakDate);
+  last.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((today.getTime() - last.getTime()) / 86400000);
+  return diffDays <= 1 ? streakDays : 0;
+}
+
 // Chiamata a fine sessione di studio: aggiorna streak, punti e i contatori
 // usati per lo sblocco dei badge, poi rivaluta i badge dell'utente.
 //
@@ -92,4 +105,4 @@ async function recordSessionCompletion(conn, userId, { cardsInSession, knew, dur
   });
 }
 
-module.exports = { recordSessionCompletion };
+module.exports = { recordSessionCompletion, effectiveStreak };

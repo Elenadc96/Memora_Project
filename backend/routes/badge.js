@@ -1,6 +1,7 @@
-const express = require('express');
-const router  = express.Router();
-const db      = require('../config/db');
+const express              = require('express');
+const router               = express.Router();
+const db                   = require('../config/db');
+const { effectiveStreak }  = require('../services/gamificationService');
 
 // Montato in app.js su /api/badge con verifyToken a livello di mount.
 
@@ -11,7 +12,7 @@ router.get('/me', async (req, res) => {
     const userId = req.user.id;
 
     const [statsRows] = await db.query(
-      `SELECT total_point, streak_days, cards_completed, perfect_sessions, is_speedster, is_night_owl
+      `SELECT total_point, streak_days, last_streak_date, cards_completed, perfect_sessions, is_speedster, is_night_owl
        FROM points WHERE user_id = ?`,
       [userId]
     );
@@ -42,7 +43,7 @@ router.get('/me', async (req, res) => {
       })),
       stats: {
         totalPoints: Number(s.total_point),
-        streak: Number(s.streak_days),
+        streak: effectiveStreak(Number(s.streak_days), s.last_streak_date),
         cardsCompleted: Number(s.cards_completed),
         perfectSessions: Number(s.perfect_sessions),
         isSpeedster: !!s.is_speedster,

@@ -1,7 +1,8 @@
-const express     = require('express');
-const router      = express.Router();
-const db          = require('../config/db');
-const verifyToken = require('../middleware/auth');
+const express          = require('express');
+const router           = express.Router();
+const db               = require('../config/db');
+const verifyToken      = require('../middleware/auth');
+const { effectiveStreak } = require('../services/gamificationService');
 
 // Montato in app.js su /api SENZA verifyToken a livello di mount, perché
 // /status è l'unico endpoint pubblico dell'API (health check): dashboard e
@@ -30,7 +31,8 @@ router.get('/ranking', verifyToken, async (req, res) => {
     const [rows] = await db.query(`
       SELECT u.id AS userId, u.name, u.lastName,
              COALESCE(p.total_point, 0) AS points,
-             COALESCE(p.streak_days, 0) AS streak
+             COALESCE(p.streak_days, 0) AS streak,
+             p.last_streak_date
       FROM utenti u
       JOIN points p ON p.user_id = u.id
       ORDER BY p.total_point DESC, p.last_streak_date DESC, u.id ASC
@@ -42,7 +44,7 @@ router.get('/ranking', verifyToken, async (req, res) => {
       userId: r.userId,
       name: `${r.name} ${r.lastName}`,
       points: Number(r.points),
-      streak: Number(r.streak),
+      streak: effectiveStreak(Number(r.streak), r.last_streak_date),
       isCurrentUser: r.userId === req.user.id,
     }));
 
@@ -103,7 +105,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
 
     // Streak dall'utente
     const [[pointsRow]] = await db.query(`
-      SELECT COALESCE(streak_days, 0) AS streak FROM points WHERE user_id = ?
+      SELECT COALESCE(streak_days, 0) AS streak, last_streak_date FROM points WHERE user_id = ?
     `, [userId]);
 
     // Attività settimanale: ultimi 7 giorni raggruppati per data
@@ -167,7 +169,7 @@ router.get('/dashboard', verifyToken, async (req, res) => {
       studyTimeSeconds: Number(todayRow.studyTimeSeconds),
       successRate30d:   rateRow.successRate30d  != null ? Number(rateRow.successRate30d)  : null,
       successRateAll:   rateRow.successRateAll  != null ? Number(rateRow.successRateAll)  : null,
-      streak:           pointsRow ? Number(pointsRow.streak) : 0,
+      streak:           pointsRow ? effectiveStreak(Number(pointsRow.streak), pointsRow.last_streak_date) : 0,
       weeklyActivity,
     });
   } catch (err) {
