@@ -136,12 +136,12 @@ export const useFlashcardStore = defineStore('flashcards', {
 
     // ── Lessons ─────────────────────────────────────────────────────────────
 
-    selectSubject(id: number | null): void {
+    selectSubject(id: number | null): Promise<void> | undefined {
       this.selectedSubjectId = id
       if (id) {
         this.lessons = []
         this.flashcardsByLesson = {}
-        this.fetchLessons(id)
+        return this.fetchLessons(id)
       }
     },
 
