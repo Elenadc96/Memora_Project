@@ -28,6 +28,8 @@ export interface Flashcard {
   answer: string
   difficult: number
   status?: CardStatus
+  questionImage?: string | null
+  answerImage?: string | null
 }
 
 export interface Lesson {

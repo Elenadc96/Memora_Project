@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
@@ -24,6 +25,14 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser()); // Necessario per leggere l'access_token
+
+// Statico per le immagini delle flashcard. I filename sono UUID (128 bit di
+// entropia) → non enumerabili, quindi il path pubblico funziona da "capability
+// token" implicito senza bisogno di un endpoint proxy autenticato.
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+  maxAge: '7d',
+  immutable: true,
+}));
 
 // ROTTE DI AUTENTICAZIONE
 app.use('/api/auth', require('./routes/auth'));

@@ -8,6 +8,8 @@ export interface StudyFlashcard {
   status: CardStatus
   difficulty: DifficultyLevel
   lastReviewed: string
+  questionImage?: string | null
+  answerImage?: string | null
 }
 
 export interface StudyLesson {
@@ -25,7 +27,7 @@ export function mapDifficulty(n: number): DifficultyLevel {
 }
 
 export function toStudyFlashcard(
-  f: { id: number; question: string; answer: string; difficult: number },
+  f: { id: number; question: string; answer: string; difficult: number; questionImage?: string | null; answerImage?: string | null },
   status: CardStatus = 'learning',
 ): StudyFlashcard {
   return {
@@ -35,6 +37,8 @@ export function toStudyFlashcard(
     status,
     difficulty: mapDifficulty(f.difficult),
     lastReviewed: new Date().toISOString().split('T')[0],
+    questionImage: f.questionImage ?? null,
+    answerImage:   f.answerImage   ?? null,
   }
 }
 

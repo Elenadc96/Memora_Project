@@ -19,9 +19,21 @@
 
         <!-- Domanda -->
         <p class="font-medium text-primary dark:text-on-surface text-sm mb-2">{{ card.question }}</p>
+        <img
+          v-if="card.questionImage"
+          :src="card.questionImage"
+          alt=""
+          class="flashcard-list-img mb-2"
+        />
 
         <!-- Risposta -->
         <p class="text-text-muted dark:text-on-surface/60 text-sm leading-relaxed">{{ card.answer }}</p>
+        <img
+          v-if="card.answerImage"
+          :src="card.answerImage"
+          alt=""
+          class="flashcard-list-img mt-2"
+        />
 
         <!-- Menu ⋮ -->
         <div class="absolute top-4 right-4">
@@ -142,3 +154,14 @@ function diffClass(difficulty: DifficultyLevel): string {
   return map[difficulty]
 }
 </script>
+
+<style scoped>
+.flashcard-list-img {
+  max-height: 180px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  background: rgba(0, 0, 0, 0.02);
+}
+</style>

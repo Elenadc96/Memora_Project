@@ -119,6 +119,22 @@
       "answer_placeholder": "Scrivi la risposta...",
       "difficulty_label": "Difficoltà",
       "submit": "Aggiungi"
+    },
+    "edit_flashcard": {
+      "title": "Modifica flashcard",
+      "question_label": "Domanda",
+      "answer_label": "Risposta",
+      "difficulty_label": "Difficoltà",
+      "submit": "Salva"
+    },
+    "image_picker": {
+      "add": "Aggiungi immagine",
+      "remove": "Rimuovi",
+      "format_hint": "JPG, PNG o WebP · max {{max}} MB",
+      "error_type": "Formato non supportato. Usa JPG, PNG o WebP.",
+      "error_size": "L'immagine supera i {{max}} MB.",
+      "question_label": "Immagine domanda (opzionale)",
+      "answer_label": "Immagine risposta (opzionale)"
     }
   },
   "lesson": {

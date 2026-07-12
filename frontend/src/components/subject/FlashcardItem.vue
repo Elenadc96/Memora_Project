@@ -13,11 +13,25 @@
     <!-- Domanda -->
     <div class="flashcard-question">
       {{ flashcard.question }}
+      <img
+        v-if="flashcard.questionImage"
+        :src="flashcard.questionImage"
+        alt=""
+        class="flashcard-thumb"
+      />
     </div>
 
     <!-- Risposta (nascosta finché non si clicca) -->
     <div class="flashcard-answer" @click="revealed = !revealed">
-      <span v-if="revealed">{{ flashcard.answer }}</span>
+      <template v-if="revealed">
+        {{ flashcard.answer }}
+        <img
+          v-if="flashcard.answerImage"
+          :src="flashcard.answerImage"
+          alt=""
+          class="flashcard-thumb"
+        />
+      </template>
       <span v-else class="flashcard-answer--hidden">{{ $t('subject.tap_to_reveal') }}</span>
     </div>
 
@@ -127,4 +141,14 @@ export default defineComponent({
 }
 .flashcard-item:hover .flashcard-delete { opacity: 1; }
 .flashcard-delete:hover { background: #fee2e2; }
+
+.flashcard-thumb {
+  display: block;
+  max-height: 60px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 4px;
+  margin-top: 4px;
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+}
 </style>

@@ -2,6 +2,12 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../config/db');
 const { userOwnsLesson } = require('../helpers/ownership');
+const {
+  flashcardImagesUpload,
+  handleUploadError,
+  saveImage,
+  deleteContentImages,
+} = require('../middleware/upload');
 
 // Montato in app.js su /api/lessons con verifyToken a livello di mount.
 //
@@ -42,31 +48,38 @@ router.patch('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/lessons/:id — elimina lezione + tutte le sue flashcard.
+// DELETE /api/lessons/:id — elimina lezione + tutte le sue flashcard + immagini.
 //
 // Il CASCADE dello schema rimuove automaticamente le righe in flashcard_lesson
 // quando si cancella una lesson, ma NON tocca la tabella flashcard stessa
-// (le flashcard diventerebbero orfane). Per questo:
-// 1. Si recuperano gli id delle flashcard legate a questa lezione
-// 2. Si cancella la lezione (il CASCADE pulisce flashcard_lesson)
-// 3. Si cancellano le flashcard orfane con quei id
+// (le flashcard diventerebbero orfane) né i file immagine sul disco. Per questo:
+// 1. Si recuperano le flashcard (id + content) legate a questa lezione
+// 2. Si cancellano i file immagine su disco (prima di perdere il riferimento)
+// 3. Si cancella la lezione (il CASCADE pulisce flashcard_lesson)
+// 4. Si cancellano le righe flashcard ora orfane
 router.delete('/:id', async (req, res) => {
   try {
     if (!(await userOwnsLesson(req.user.id, req.params.id))) {
       return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
     }
 
-    // 1. Trova le flashcard della lezione prima che il CASCADE le scolleghi
+    // 1. Recupera id + content delle flashcard della lezione
     const [fcRows] = await db.query(
-      'SELECT flashcard_id FROM flashcard_lesson WHERE lesson_id = ?',
+      `SELECT f.id, f.content
+       FROM flashcard f
+       JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
+       WHERE fl.lesson_id = ?`,
       [req.params.id]
     );
-    const flashcardIds = fcRows.map(r => r.flashcard_id);
+    const flashcardIds = fcRows.map(r => r.id);
 
-    // 2. Elimina la lezione → CASCADE rimuove le righe in flashcard_lesson
+    // 2. Cancella i file immagine (best-effort: se un file manca già, non blocca)
+    await Promise.all(fcRows.map(r => deleteContentImages(r.content)));
+
+    // 3. Elimina la lezione → CASCADE rimuove le righe in flashcard_lesson
     await db.query('DELETE FROM lessons WHERE id = ?', [req.params.id]);
 
-    // 3. Elimina le flashcard ora orfane
+    // 4. Elimina le flashcard ora orfane
     if (flashcardIds.length > 0) {
       await db.query('DELETE FROM flashcard WHERE id IN (?)', [flashcardIds]);
     }
@@ -79,7 +92,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // GET /api/lessons/:id/flashcards — flashcard di una lezione
-// Il campo content (JSON) viene spacchettato in question/answer per il frontend
+// Il campo content (JSON) viene spacchettato in question/answer/immagini per il frontend
 router.get('/:id/flashcards', async (req, res) => {
   try {
     if (!(await userOwnsLesson(req.user.id, req.params.id))) {
@@ -98,10 +111,12 @@ router.get('/:id/flashcards', async (req, res) => {
       const c = typeof r.content === 'string' ? JSON.parse(r.content) : (r.content ?? {});
       return {
         ...r,
-        content:  c,
-        question: c.question ?? '',
-        answer:   c.answer   ?? '',
-        status:   r.status ?? 'learning',
+        content:       c,
+        question:      c.question ?? '',
+        answer:        c.answer   ?? '',
+        questionImage: c.questionImage ?? null,
+        answerImage:   c.answerImage   ?? null,
+        status:        r.status ?? 'learning',
       };
     });
     res.json(parsed);
@@ -111,8 +126,14 @@ router.get('/:id/flashcards', async (req, res) => {
   }
 });
 
-// POST /api/lessons/:id/flashcards — crea flashcard in una lezione
-router.post('/:id/flashcards', async (req, res) => {
+// POST /api/lessons/:id/flashcards — crea flashcard (con eventuali immagini)
+//
+// Il body è sempre multipart/form-data (il frontend usa FormData anche quando
+// non c'è alcun file): questo evita di avere due formati diversi lato server
+// e semplifica il codice del client. multer popola req.body con i campi text
+// e req.files con gli eventuali file.
+router.post('/:id/flashcards', flashcardImagesUpload, handleUploadError, async (req, res) => {
+  const savedPaths = [];
   try {
     if (!(await userOwnsLesson(req.user.id, req.params.id))) {
       return res.status(404).json({ error: 'LESSON_NOT_FOUND' });
@@ -122,24 +143,49 @@ router.post('/:id/flashcards', async (req, res) => {
     if (!question?.trim() || !answer?.trim()) {
       return res.status(400).json({ error: 'FLASHCARD_QUESTION_ANSWER_REQUIRED' });
     }
-    const content = JSON.stringify({ question: question.trim(), answer: answer.trim() });
+
+    // Salva le immagini PRIMA di scrivere sul DB. Se qualcosa fallisce dopo,
+    // il catch cancella i file appena creati per non lasciare orfani.
+    const questionImagePath = req.files?.questionImage?.[0]
+      ? await saveImage(req.files.questionImage[0].buffer)
+      : null;
+    if (questionImagePath) savedPaths.push(questionImagePath);
+
+    const answerImagePath = req.files?.answerImage?.[0]
+      ? await saveImage(req.files.answerImage[0].buffer)
+      : null;
+    if (answerImagePath) savedPaths.push(answerImagePath);
+
+    const contentObj = {
+      question: question.trim(),
+      answer:   answer.trim(),
+      ...(questionImagePath && { questionImage: questionImagePath }),
+      ...(answerImagePath   && { answerImage:   answerImagePath   }),
+    };
+    const content = JSON.stringify(contentObj);
+
     const [fcResult] = await db.query(
       'INSERT INTO flashcard (content, difficult) VALUES (?, ?)',
-      [content, difficult]
+      [content, Number(difficult) || 0]
     );
     await db.query(
       'INSERT INTO flashcard_lesson (flashcard_id, lesson_id) VALUES (?, ?)',
       [fcResult.insertId, req.params.id]
     );
     res.status(201).json({
-      id: fcResult.insertId,
-      content: { question: question.trim(), answer: answer.trim() },
-      question: question.trim(),
-      answer:   answer.trim(),
-      difficult,
+      id:            fcResult.insertId,
+      content:       contentObj,
+      question:      contentObj.question,
+      answer:        contentObj.answer,
+      questionImage: questionImagePath,
+      answerImage:   answerImagePath,
+      difficult:     Number(difficult) || 0,
     });
   } catch (err) {
     console.error('POST /api/lessons/:id/flashcards:', err);
+    // Cleanup: se ho salvato file su disco ma poi ho fallito il DB, li rimuovo
+    const { deleteImageByPath } = require('../middleware/upload');
+    await Promise.all(savedPaths.map(p => deleteImageByPath(p)));
     res.status(500).json({ error: 'SERVER_ERROR' });
   }
 });

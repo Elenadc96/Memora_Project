@@ -7,6 +7,9 @@ node_modules/
 backend/node_modules/
 backend/.env
 backend/.env.local
+
+# File caricati dagli utenti (immagini flashcard): non vanno versionati
+backend/uploads/
 backend/npm-debug.log*
 backend/yarn-debug.log*
 backend/yarn-error.log*

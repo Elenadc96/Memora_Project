@@ -286,7 +286,7 @@ async function deleteFlashcard(id: string) {
   }
 }
 
-async function onSaveFlashcard(payload: { flashcardId: number; question: string; answer: string; difficult: number }) {
+async function onSaveFlashcard(payload: { flashcardId: number; question: string; answer: string; difficult: number; questionImage?: File | null; answerImage?: File | null }) {
   try {
     await store.updateFlashcard({ ...payload, lessonId: props.lesson.id })
     toast.success('Flashcard aggiornata.')
@@ -295,13 +295,16 @@ async function onSaveFlashcard(payload: { flashcardId: number; question: string;
   }
 }
 
-async function onCreateFlashcard(payload: { lessonId: number; question: string; answer: string; difficult: number }) {
+async function onCreateFlashcard(payload: { lessonId: number | null; question: string; answer: string; difficult: number; questionImage: File | null; answerImage: File | null }) {
+  if (payload.lessonId == null) return
   try {
     await store.createFlashcard({
-      lessonId: payload.lessonId,
-      question: payload.question,
-      answer: payload.answer,
-      difficult: payload.difficult,
+      lessonId:      payload.lessonId,
+      question:      payload.question,
+      answer:        payload.answer,
+      difficult:     payload.difficult,
+      questionImage: payload.questionImage,
+      answerImage:   payload.answerImage,
     })
     toast.success('Flashcard aggiunta!')
   } catch {

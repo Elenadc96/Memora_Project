@@ -71,8 +71,11 @@ export default defineComponent({
   background: white;
   border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  width: 100%; max-width: 480px;
-  overflow: hidden;
+  width: 100%; max-width: 520px;
+  max-height: calc(100dvh - 2rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* clipa i figli al border-radius */
 }
 
 .dark .dialog-panel {
@@ -104,6 +107,12 @@ export default defineComponent({
 
 .dialog-body {
   padding: 1.5rem;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* Non scrolla qui: ogni dialog gestisce il proprio scroll interno
+     solo per i campi del form, lasciando i pulsanti sempre visibili. */
 }
 
 /* Transizione apertura/chiusura */

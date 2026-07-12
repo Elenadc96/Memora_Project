@@ -60,7 +60,7 @@
           <div
             :style="{ backfaceVisibility: 'hidden' }"
             class="absolute inset-0 rounded-2xl border-2 border-border bg-white dark:bg-surface shadow-lg
-                   flex flex-col items-center justify-center p-8 text-center"
+                   flex flex-col items-center justify-center p-8 text-center overflow-y-auto"
           >
             <span
               class="text-xs font-semibold uppercase tracking-widest mb-6 px-3 py-1 rounded-full"
@@ -69,6 +69,12 @@
             <p class="text-xl font-medium text-primary dark:text-on-surface leading-relaxed">
               {{ current?.question }}
             </p>
+            <img
+              v-if="current?.questionImage"
+              :src="current.questionImage"
+              alt=""
+              class="study-card-image mt-4"
+            />
             <p class="text-text-muted dark:text-on-surface/60 text-sm mt-6">
               {{ $t('study.click_to_reveal') }}
             </p>
@@ -82,7 +88,7 @@
               borderColor: subjectColor + '88',
             }"
             class="absolute inset-0 rounded-2xl border-2 bg-white dark:bg-surface shadow-lg
-                   flex flex-col items-center justify-center p-8 text-center"
+                   flex flex-col items-center justify-center p-8 text-center overflow-y-auto"
           >
             <span
               class="text-xs font-semibold uppercase tracking-widest mb-6 px-3 py-1 rounded-full"
@@ -91,6 +97,12 @@
             <p class="text-lg text-primary dark:text-on-surface leading-relaxed">
               {{ current?.answer }}
             </p>
+            <img
+              v-if="current?.answerImage"
+              :src="current.answerImage"
+              alt=""
+              class="study-card-image mt-4"
+            />
           </div>
         </div>
       </div>
@@ -307,6 +319,9 @@ function advance(rating: Rating) {
   }, 320)
 }
 
+// Le immagini vengono mostrate ridimensionate — il container della card
+// gestisce già l'overflow con overflow-y-auto se il contenuto supera l'altezza.
+
 function restart() {
   queue.value = [...props.flashcards].sort(() => Math.random() - 0.5)
   currentIndex.value = 0
@@ -319,3 +334,13 @@ function restart() {
   timerId = setInterval(() => elapsed.value++, 1000)
 }
 </script>
+
+<style scoped>
+.study-card-image {
+  max-height: 200px;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+}
+</style>

@@ -24,6 +24,8 @@ interface CreateFlashcardPayload {
   question: string
   answer: string
   difficult?: number
+  questionImage?: File | null
+  answerImage?: File | null
 }
 
 interface DeleteFlashcardPayload {
@@ -37,6 +39,12 @@ interface UpdateFlashcardPayload {
   question: string
   answer: string
   difficult: number
+  // Semantica dei campi immagine (allineata al backend PUT):
+  //   undefined  → tieni l'immagine attuale
+  //   File       → sostituisci con il nuovo file
+  //   null       → rimuovi l'immagine attuale (nessuna sostituzione)
+  questionImage?: File | null
+  answerImage?: File | null
 }
 
 export const useFlashcardStore = defineStore('flashcards', {
@@ -200,21 +208,42 @@ export const useFlashcardStore = defineStore('flashcards', {
       }
     },
 
-    async createFlashcard({ lessonId, question, answer, difficult = 0 }: CreateFlashcardPayload): Promise<Flashcard> {
-      const { data } = await axios.post<Flashcard>(`/api/lessons/${lessonId}/flashcards`, { question, answer, difficult })
+    async createFlashcard({ lessonId, question, answer, difficult = 0, questionImage, answerImage }: CreateFlashcardPayload): Promise<Flashcard> {
+      // Uso sempre FormData (anche senza file): il backend accetta multipart
+      // sia per create che per update, così qui non ci sono due code path.
+      const fd = new FormData()
+      fd.append('question', question)
+      fd.append('answer', answer)
+      fd.append('difficult', String(difficult))
+      if (questionImage) fd.append('questionImage', questionImage)
+      if (answerImage)   fd.append('answerImage',   answerImage)
+
+      const { data } = await axios.post<Flashcard>(`/api/lessons/${lessonId}/flashcards`, fd)
       this._appendFlashcard(lessonId, data)
       this._incrementLessonCount(lessonId)
       if (this.selectedSubjectId) await this._refreshSubjectCardCount(this.selectedSubjectId)
       return data
     },
 
-    async updateFlashcard({ flashcardId, lessonId, question, answer, difficult }: UpdateFlashcardPayload): Promise<void> {
-      await axios.put(`/api/flashcards/${flashcardId}`, { question, answer, difficult })
+    async updateFlashcard({ flashcardId, lessonId, question, answer, difficult, questionImage, answerImage }: UpdateFlashcardPayload): Promise<void> {
+      const fd = new FormData()
+      fd.append('question', question)
+      fd.append('answer', answer)
+      fd.append('difficult', String(difficult))
+      // File nuovo → sostituisce | null → rimuovi | undefined → tieni
+      if (questionImage instanceof File) fd.append('questionImage', questionImage)
+      else if (questionImage === null)   fd.append('removeQuestionImage', 'true')
+      if (answerImage instanceof File) fd.append('answerImage', answerImage)
+      else if (answerImage === null)   fd.append('removeAnswerImage', 'true')
+
+      const { data } = await axios.put<Flashcard>(`/api/flashcards/${flashcardId}`, fd)
       if (this.flashcardsByLesson[lessonId]) {
         this.flashcardsByLesson = {
           ...this.flashcardsByLesson,
           [lessonId]: this.flashcardsByLesson[lessonId].map((f) =>
-            f.id === flashcardId ? { ...f, question, answer, difficult } : f,
+            f.id === flashcardId
+              ? { ...f, question, answer, difficult, questionImage: data.questionImage ?? null, answerImage: data.answerImage ?? null }
+              : f,
           ),
         }
       }

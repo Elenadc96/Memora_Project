@@ -26,6 +26,7 @@
                 <div class="face-content">
                   <span class="face-label">Domanda</span>
                   <p class="face-text">{{ card.question }}</p>
+                  <img v-if="card.questionImage" :src="card.questionImage" alt="" class="face-image" />
                   <p class="face-hint">Tocca per girare</p>
                 </div>
               </div>
@@ -35,6 +36,7 @@
                 <div class="face-content">
                   <span class="face-label">Risposta</span>
                   <p class="face-text">{{ card.answer }}</p>
+                  <img v-if="card.answerImage" :src="card.answerImage" alt="" class="face-image" />
                   <p class="face-hint">Tocca per tornare</p>
                 </div>
               </div>
@@ -170,11 +172,24 @@ function diffClass(difficulty: DifficultyLevel): string {
   word-break: break-word;
 }
 
+.face-image {
+  max-height: 220px;
+  max-width: 100%;
+  object-fit: contain;
+  margin-top: 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border, rgba(0, 0, 0, 0.08));
+}
+
 .face-hint {
   font-size: 0.72rem;
   color: var(--color-text-muted, #9ca3af);
   opacity: 0.6;
-  margin-top: 1.5rem;
+  /* auto: consuma tutto lo spazio rimanente sopra, così l'hint
+     resta sempre incollato al fondo della faccia qualunque sia
+     la quantità di testo/immagine che c'è sopra. */
+  margin-top: auto;
+  padding-top: 1rem;
   flex-shrink: 0;
 }
 
