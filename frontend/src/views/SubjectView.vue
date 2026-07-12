@@ -448,22 +448,15 @@ async function loadSubject(id: number) {
     router.replace('/dashboard')
     return
   }
-  store.selectSubject(id)
+  await store.selectSubject(id)
+  if (lessonId.value && !selectedLesson.value) {
+    router.replace({ name: 'Subject', params: { id } })
+  }
 }
 
 onMounted(() => {
   loadSubject(subjectId.value)
 })
-
-// Quando le lezioni finiscono di caricarsi e il lessonId non esiste → torna alla lista
-watch(
-  () => store.loading,
-  (loading) => {
-    if (!loading && lessonId.value && !selectedLesson.value) {
-      router.replace({ name: 'Subject', params: { id: subjectId.value } })
-    }
-  },
-)
 
 watch(subjectId, (newId) => {
   loadSubject(newId)
