@@ -14,7 +14,7 @@
     </nav>
 
     <!-- ── Header lezione ─────────────────────────────────────────────── -->
-    <div class="flex items-start justify-between mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
       <div>
         <h2 class="page-title">{{ lesson.name }}</h2>
         <p v-if="lessonDate" class="text-xs text-text-muted dark:text-on-surface/60 mt-0.5">
@@ -22,7 +22,7 @@
         </p>
         <p v-if="lesson.description" class="page-subtitle mt-1">{{ lesson.description }}</p>
       </div>
-      <div class="flex items-center gap-2 flex-shrink-0 ml-4">
+      <div class="flex items-center gap-2 flex-shrink-0">
         <button class="btn-outline flex items-center gap-2 text-sm" @click="createFlashcardOpen = true">
           <Plus class="w-4 h-4" />
           {{ $t('subject.add_flashcard') }}
@@ -41,7 +41,7 @@
     </div>
 
     <!-- ── 3 stat card ────────────────────────────────────────────────── -->
-    <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
       <div class="rounded-xl border border-border bg-white dark:bg-surface p-4 flex items-center gap-3">
         <BookOpen class="w-8 h-8 text-accent opacity-70" />
         <div>

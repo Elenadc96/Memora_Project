@@ -1,5 +1,5 @@
 <template>
-  <main class="flex-1 overflow-y-auto p-8">
+  <main class="flex-1 overflow-y-auto p-4 md:p-8">
     <header class="mb-6">
       <h1 class="text-2xl font-semibold text-primary dark:text-on-surface">{{ $t('dashboard.title') }}</h1>
       <p class="text-text-muted text-sm mt-1">{{ $t('dashboard.subtitle') }}</p>
@@ -12,7 +12,7 @@
 
     <template v-else>
       <!-- Stat cards -->
-      <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div
           v-for="card in statCards"
           :key="card.label"
@@ -33,7 +33,7 @@
       </div>
 
       <!-- Grafico + Progresso affiancati -->
-      <div class="flex gap-6">
+      <div class="flex flex-col lg:flex-row gap-6">
         <!-- Card grafico attività settimanale -->
         <div class="card flex-1 rounded-2xl p-6">
           <h2 class="text-base font-semibold text-primary dark:text-on-surface mb-4">{{ $t('chart.title') }}</h2>
@@ -56,7 +56,7 @@
         </div>
 
         <!-- Card progresso per materia -->
-        <div class="card w-72 flex-shrink-0 rounded-2xl p-6 h-fit">
+        <div class="card w-full lg:w-72 flex-shrink-0 rounded-2xl p-6 h-fit">
           <h2 class="text-base font-semibold text-primary dark:text-on-surface mb-5">{{ $t('progress.title') }}</h2>
 
           <p v-if="subjectProgress.length === 0" class="text-sm text-text-muted">

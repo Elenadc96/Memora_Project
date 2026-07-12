@@ -1,12 +1,24 @@
 <template>
-  <aside class="w-64 bg-white dark:bg-surface border-r border-border flex flex-col h-full flex-shrink-0">
+  <aside
+    class="fixed inset-y-0 left-0 z-50 w-64
+           md:relative md:inset-auto md:z-auto md:translate-x-0
+           bg-white dark:bg-surface border-r border-border flex flex-col h-full flex-shrink-0
+           transition-transform duration-300"
+    :class="open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
+  >
 
     <!-- ── Header: logo app ──────────────────────────────────────────── -->
-    <div class="p-6 border-b border-border">
+    <div class="p-6 border-b border-border flex items-center justify-between">
       <h1 class="text-primary dark:text-on-surface font-semibold flex items-center gap-2">
         <BookOpen class="w-6 h-6 text-accent" />
         {{ $t('sidebar.app_name') }}
       </h1>
+      <button
+        class="md:hidden p-1 rounded-lg hover:bg-accent/10 text-text-muted transition-colors"
+        @click="$emit('close')"
+      >
+        <X class="w-4 h-4" />
+      </button>
     </div>
 
     <!-- ── Navigazione principale + materie (area scrollabile) ──────── -->
@@ -16,7 +28,7 @@
       <button
         class="sidebar-item"
         :class="{ 'sidebar-item--active': isRoute('/dashboard') }"
-        @click="$router.push('/dashboard')"
+        @click="$router.push('/dashboard'); $emit('close')"
       >
         <LayoutDashboard class="w-4 h-4" />
         {{ $t('sidebar.dashboard') }}
@@ -26,7 +38,7 @@
       <button
         class="sidebar-item"
         :class="{ 'sidebar-item--active': isRoute('/ranking') }"
-        @click="$router.push('/ranking')"
+        @click="$router.push('/ranking'); $emit('close')"
       >
         <Trophy class="w-4 h-4" />
         {{ $t('sidebar.ranking') }}
@@ -52,7 +64,7 @@
         :key="subject.id"
         class="sidebar-item"
         :class="{ 'sidebar-item--active': isActiveSubject(subject.id) }"
-        @click="selectSubject(subject.id)"
+        @click="selectSubject(subject.id); $emit('close')"
       >
         <span
           class="w-6 h-6 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
@@ -145,7 +157,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut } from 'lucide-vue-next'
+import { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut, X } from 'lucide-vue-next'
 import { useFlashcardStore } from '@/stores/flashcards'
 import { useAuthStore } from '@/stores/auth'
 import CreateSubjectDialog from '@/components/subject/CreateSubjectDialog.vue'
@@ -155,7 +167,16 @@ import { swalTheme } from '@/utils/notify'
 export default defineComponent({
   name: 'AppSidebar',
 
-  components: { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut, CreateSubjectDialog },
+  components: { BookOpen, LayoutDashboard, Trophy, Plus, Settings, User, ChevronDown, LogOut, X, CreateSubjectDialog },
+
+  props: {
+    open: {
+      type: Boolean,
+      default: false,
+    },
+  },
+
+  emits: ['close'],
 
   setup() {
     const store    = useFlashcardStore()

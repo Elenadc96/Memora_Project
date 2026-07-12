@@ -51,10 +51,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { useTranslation } from 'i18next-vue'
 import { X, Image as ImageIcon } from 'lucide-vue-next'
 
-const { t } = useI18n()
+const { t } = useTranslation()
 
 const props = defineProps<{
   modelValue: File | null

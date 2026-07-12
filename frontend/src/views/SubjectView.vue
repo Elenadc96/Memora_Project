@@ -1,5 +1,5 @@
 <template>
-  <div class="p-8">
+  <div class="p-4 md:p-8">
 
     <!-- ── Caricamento iniziale su URL lezione (refresh) ────────────── -->
     <div v-if="lessonId && store.loading" class="flex justify-center py-16">
@@ -21,7 +21,7 @@
 
       <!-- Header materia -->
       <div class="mb-8">
-        <div class="flex items-start justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div class="flex items-center gap-4">
             <!-- Icona emoji con sfondo colorato -->
             <span
@@ -38,7 +38,7 @@
           </div>
 
           <!-- Azioni header -->
-          <div class="flex items-center gap-2 flex-shrink-0 ml-4">
+          <div class="flex items-center gap-2 flex-shrink-0">
             <button
               class="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium
                      text-text-muted dark:text-on-surface/50
@@ -75,7 +75,7 @@
       </div>
 
       <!-- 3 stat card -->
-      <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div class="rounded-xl border border-border bg-white dark:bg-surface p-4 flex items-center gap-3">
           <GraduationCap class="w-8 h-8 text-accent opacity-70" />
           <div>

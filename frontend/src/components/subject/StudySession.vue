@@ -3,7 +3,7 @@
   <div class="fixed inset-0 z-50 bg-page flex flex-col">
 
     <!-- ── Header ────────────────────────────────────────────────────── -->
-    <div class="flex items-center gap-4 px-6 py-4 border-b border-border">
+    <div class="flex items-center gap-4 px-4 sm:px-6 py-3 sm:py-4 border-b border-border">
       <button
         class="text-text-muted hover:text-primary dark:hover:text-on-surface transition-colors"
         @click="emit('close')"
@@ -33,7 +33,7 @@
     </div>
 
     <!-- ── Corpo sessione (studio) ────────────────────────────────────── -->
-    <div v-if="!finished" class="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-8">
+    <div v-if="!finished" class="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-6 sm:py-8 gap-6 sm:gap-8">
 
       <!-- Contatori live -->
       <div class="flex gap-6 text-sm font-medium">
@@ -150,7 +150,7 @@
     </div>
 
     <!-- ── Riepilogo ──────────────────────────────────────────────────── -->
-    <div v-else class="flex-1 flex flex-col items-center justify-center px-6 py-12 overflow-y-auto">
+    <div v-else class="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-8 sm:py-12 overflow-y-auto">
       <div class="w-full max-w-md space-y-8">
 
         <!-- Score ring -->
@@ -173,7 +173,7 @@
         </div>
 
         <!-- 3 stat card -->
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-3 gap-2 sm:gap-4">
           <div class="rounded-xl border border-green-200 bg-green-50 dark:bg-green-500/10 dark:border-green-500/30 p-4 text-center">
             <CheckCircle2 class="w-6 h-6 text-green-600 mx-auto mb-1" />
             <p class="text-2xl font-bold text-green-700 dark:text-green-400">{{ knew }}</p>
