@@ -6,6 +6,7 @@ const rateLimit = require('express-rate-limit');
 const { ipKeyGenerator } = require('express-rate-limit');
 const db       = require('../config/db');
 const { isValidPassword, isValidSettings } = require('../utils/validators');
+const { deleteContentImages } = require('../middleware/upload');
 
 // NOTA su { error: 'CODICE' }: i campi `error` in questo file sono codici
 // stabili (es. 'PASSWORD_WRONG_CURRENT'), non frasi. Il frontend li traduce
@@ -127,19 +128,25 @@ router.patch('/password', passwordChangeLimiter, async (req, res) => {
 // 2. si cancella l'utente (il CASCADE pulisce tutto il resto)
 // 3. si cancellano le flashcard orfane con quegli id
 router.delete('/', async (req, res) => {
+  // Recupera id + content prima della transaction: le FS ops non sono rollbackabili,
+  // quindi le eseguiamo fuori dalla transaction SQL (best-effort, come in DELETE /api/lessons).
+  const [fcRows] = await db.query(
+    `SELECT f.id AS flashcard_id, f.content
+     FROM flashcard f
+     JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
+     JOIN lessons l ON l.id = fl.lesson_id
+     JOIN subject s ON s.id = l.subject_id
+     WHERE s.user_id = ?`,
+    [req.user.id]
+  );
+  const flashcardIds = fcRows.map(r => r.flashcard_id);
+
+  // Cancella i file immagine prima di perdere i riferimenti (best-effort)
+  await Promise.all(fcRows.map(r => deleteContentImages(r.content)));
+
   const conn = await db.getConnection();
   try {
     await conn.beginTransaction();
-
-    const [fcRows] = await conn.query(
-      `SELECT fl.flashcard_id
-       FROM flashcard_lesson fl
-       JOIN lessons l ON l.id = fl.lesson_id
-       JOIN subject s ON s.id = l.subject_id
-       WHERE s.user_id = ?`,
-      [req.user.id]
-    );
-    const flashcardIds = fcRows.map(r => r.flashcard_id);
 
     await conn.query('DELETE FROM utenti WHERE id = ?', [req.user.id]);
 

@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('../config/db');
+const { deleteContentImages } = require('../middleware/upload');
 
 // Montato in app.js su /api/subjects con verifyToken a livello di mount:
 // tutte le rotte qui dentro hanno già req.user valorizzato.
@@ -111,13 +112,17 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const [fcRows] = await db.query(
-      `SELECT fl.flashcard_id
-       FROM flashcard_lesson fl
+      `SELECT f.id AS flashcard_id, f.content
+       FROM flashcard f
+       JOIN flashcard_lesson fl ON fl.flashcard_id = f.id
        JOIN lessons l ON l.id = fl.lesson_id
        WHERE l.subject_id = ?`,
       [req.params.id]
     );
     const flashcardIds = fcRows.map(r => r.flashcard_id);
+
+    // Cancella i file immagine prima di perdere i riferimenti (best-effort)
+    await Promise.all(fcRows.map(r => deleteContentImages(r.content)));
 
     const [result] = await db.query(
       'DELETE FROM subject WHERE id = ? AND user_id = ?',
